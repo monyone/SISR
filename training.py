@@ -25,6 +25,8 @@ if __name__ == '__main__':
   parser.add_argument('--epochs', type=int, default=10, help="Number of Epochs")
   parser.add_argument('--model', type=str, required=True, help="SISR model")
   parser.add_argument('--scale', type=int, default=2, help="Upscaling scale factor")
+  parser.add_argument('--batch', type=int, default=1, help="Batch size")
+
   args = parser.parse_args()
 
   models = {
@@ -35,8 +37,8 @@ if __name__ == '__main__':
 
   model, train_set, validation_set, loss, lr = models[args.model]
   optimizer = optim.Adam(model.parameters(), lr=lr)
-  train_loader = DataLoader(dataset=train_set, batch_size=1, shuffle=True)
-  validation_loader = DataLoader(dataset=validation_set, batch_size=1, shuffle=False)
+  train_loader = DataLoader(dataset=train_set, batch_size=args.batch, shuffle=True)
+  validation_loader = DataLoader(dataset=validation_set, batch_size=args.batch, shuffle=True)
 
   trainer = Trainer(model=model, optimizer=optimizer, criterion=loss, seed=None, train_loader=train_loader, test_loader=validation_loader)
-  trainer.run(epochs=args.epochs, save_dir=Path(f'./result/{args.model}_x{args.scale}'), save_prefix='checkpoint')
+  trainer.run(epochs=args.epochs, save_dir=Path(f'./result/{args.model}_x{args.scale}'), save_prefix='state')

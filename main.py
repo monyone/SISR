@@ -21,8 +21,8 @@ if __name__ == '__main__':
   parser.add_argument('--image', type=Path, required=True, help="Input Image Path")
   parser.add_argument('--model', type=str, required=True, help="SISR model")
   parser.add_argument('--crop', type=int, help="Crop size")
-  parser.add_argument('--scale', type=int, default=1, help="Down Scale factor")
-  parser.add_argument('--checkpoint', type=Path, required=True, help="Trained checkpoint Path")
+  parser.add_argument('--scale', type=int, default=1, help="Downscale factor")
+  parser.add_argument('--state', type=Path, required=True, help="Trained state Path")
   args = parser.parse_args()
 
   models = {
@@ -33,7 +33,7 @@ if __name__ == '__main__':
 
   device: str = 'cuda' if cuda.is_available() else 'cpu'
   model, dataset = models[args.model]
-  model.load_state_dict(torch.load(str(args.checkpoint), map_location=device))
+  model.load_state_dict(torch.load(str(args.state), map_location=device))
   dataloader = DataLoader(dataset=dataset, batch_size=1)
 
   model = model.to(device)
@@ -41,6 +41,6 @@ if __name__ == '__main__':
   for _, lowres in dataloader:
     lowres = lowres.to(device)
     upscaled = model(lowres)
-    #utils.save_image(lowres, str(f'./{args.image.stem}_lr{args.image.suffix}'), nrow=1)
-    #utils.save_image(hires, str(f'./{args.image.stem}_hr{args.image.suffix}'), nrow=1)
+    # utils.save_image(lowres, str(f'./{args.image.stem}_lr{args.image.suffix}'), nrow=1)
+    # utils.save_image(_, str(f'./{args.image.stem}_hr{args.image.suffix}'), nrow=1)
     utils.save_image(upscaled, str(f'./{args.image.stem}_sr{args.image.suffix}'), nrow=1)
