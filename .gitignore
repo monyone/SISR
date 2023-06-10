@@ -1,0 +1,6 @@
+.venv
+.tool-versions
+.envrc
+__pycache__
+
+data/DIV2K
