@@ -37,8 +37,12 @@ if __name__ == '__main__':
 
   model, train_set, validation_set, loss, lr = models[args.model]
   optimizer = optim.Adam(model.parameters(), lr=lr)
+  scheduler = optim.lr_scheduler.ConstantLR(optimizer, last_epoch=-1)
+  if args.model == 'VDSR':
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.epochs // 4, gamma=0.1)
+
   train_loader = DataLoader(dataset=train_set, batch_size=args.batch, shuffle=True)
   validation_loader = DataLoader(dataset=validation_set, batch_size=args.batch, shuffle=True)
 
-  trainer = Trainer(model=model, optimizer=optimizer, criterion=loss, seed=None, train_loader=train_loader, test_loader=validation_loader)
+  trainer = Trainer(model=model, optimizer=optimizer, scheduler=scheduler, criterion=loss, seed=None, train_loader=train_loader, test_loader=validation_loader)
   trainer.run(epochs=args.epochs, save_dir=Path(f'./result/{args.model}_x{args.scale}'), save_prefix='state')

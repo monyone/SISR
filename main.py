@@ -8,7 +8,6 @@ from torch import cuda
 from torch.utils.data import DataLoader
 import torchvision.utils as utils
 
-
 from data.interpolated import InterpolatedImageDataset
 from data.noninterpolated import NonInterpolatedImageDataset
 
@@ -38,9 +37,12 @@ if __name__ == '__main__':
 
   model = model.to(device)
 
-  for _, lowres in dataloader:
-    lowres = lowres.to(device)
-    upscaled = model(lowres)
-    # utils.save_image(lowres, str(f'./{args.image.stem}_lr{args.image.suffix}'), nrow=1)
-    # utils.save_image(_, str(f'./{args.image.stem}_hr{args.image.suffix}'), nrow=1)
-    utils.save_image(upscaled, str(f'./{args.image.stem}_sr{args.image.suffix}'), nrow=1)
+  model.eval()
+  with torch.no_grad():
+    for _, lowres in dataloader:
+      lowres = lowres.to(device)
+      upscaled = model(lowres)
+      #utils.save_image(lowres, str(f'./{args.image.stem}_lr{args.image.suffix}'), nrow=1)
+      #utils.save_image(_, str(f'./{args.image.stem}_hr{args.image.suffix}'), nrow=1)
+      #utils.save_image(upscaled - lowres, str(f'./{args.image.stem}_sr_d{args.image.suffix}'), nrow=1)
+      utils.save_image(upscaled, str(f'./{args.image.stem}_sr{args.image.suffix}'), nrow=1)

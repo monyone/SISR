@@ -12,11 +12,12 @@ from torch.utils.data import DataLoader
 from torch.autograd import Variable
 
 class Trainer:
-  def __init__(self, model: nn.Module, optimizer: optim.Optimizer, criterion: nn.modules.loss._Loss, seed: int | None, train_loader: DataLoader, test_loader: DataLoader) -> None:
+  def __init__(self, model: nn.Module, optimizer: optim.Optimizer, scheduler: optim.lr_scheduler.LRScheduler, criterion: nn.modules.loss._Loss, seed: int | None, train_loader: DataLoader, test_loader: DataLoader) -> None:
     super().__init__()
     self.device: str = 'cuda' if cuda.is_available() else 'cpu'
     self.model: nn.Module = model.to(self.device)
     self.optimizer: optim.Optimizer = optimizer
+    self.scheduler: optim.lr_scheduler.LRScheduler = scheduler
     self.criterion: nn.modules.loss._Loss = criterion
     self.train_loader: DataLoader = train_loader
     self.test_loader: DataLoader = test_loader
@@ -35,6 +36,7 @@ class Trainer:
       self.optimizer.zero_grad()
       prediction = self.model(lowres)
       loss = self.criterion(prediction, highres)
+
       epoch_loss += cast(float, loss.data)
       epoch_psnr += 10 * log10(1 / cast(float, loss.data))
 
@@ -60,5 +62,7 @@ class Trainer:
     os.makedirs(save_dir, exist_ok=True)
     for epoch in range(epochs):
       self.train(epoch=epoch)
+      self.scheduler.step()
+
       self.test(epoch=epoch)
       torch.save(self.model.state_dict(), save_dir / f'{save_prefix}_{epoch}.pth')

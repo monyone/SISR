@@ -2,6 +2,8 @@
 import torch
 import torch.nn as nn
 
+from math import sqrt
+
 """VDSR Model
 
 Very Deep Super Resolution (VDSR)
@@ -26,13 +28,17 @@ class VDSR(nn.Module):
     super().__init__()
     self.layers = nn.Sequential(
       # Input
-      nn.Conv2d(in_channels=c, out_channels=n, kernel_size=f, padding=f//2, bias=True),
+      nn.Conv2d(in_channels=c, out_channels=n, kernel_size=f, padding=f//2, bias=False),
       nn.ReLU(inplace=True),
       # Residual Layer
-      *sum([[nn.Conv2d(in_channels=n, out_channels=n, kernel_size=f, padding=f//2, bias=True), nn.ReLU(inplace=True)] for _ in range(d - 1)], []),
+      *sum([[nn.Conv2d(in_channels=n, out_channels=n, kernel_size=f, padding=f//2, bias=False), nn.ReLU(inplace=True)] for _ in range(d - 1)], []),
       # Output
-      nn.Conv2d(in_channels=n, out_channels=c, kernel_size=f, padding=f//2, bias=True)
+      nn.Conv2d(in_channels=n, out_channels=c, kernel_size=f, padding=f//2, bias=False)
     )
+
+    for m in self.modules():
+      if isinstance(m, nn.Conv2d):
+        m.weight.data.normal_(0, sqrt(2. / (m.kernel_size[0] * m.kernel_size[1] * m.out_channels)))
 
   def forward(self, x):
     input = x
