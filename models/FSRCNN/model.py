@@ -15,26 +15,34 @@ class FSRCNN(nn.Module):
     """FSRCNN's Constructor
 
     Args:
+      scale (int): number of scaling
       c (int): number of channel the input/output image.
       d (int): number of feature map.
       m (int): number of mapping layers.
 
     Examples:
-      >>> FSRCNN() # typical SRCNN parameters
+      >>> FSRCNN(scale) # typical FSRCNN parameters
+      >>> FSRCNN(scale, d=32, s=5, m=1) # typical FSRCNN-s paramters
+      >>> FSRCNN(scale, d=8, s=8, m=4) # FSRCNNX (https://github.com/igv/FSRCNN-TensorFlow) 8-0-4-1 parameters
+      >>> FSRCNN(scale, d=16, s=16, m=4) # FSRCNNX (https://github.com/igv/FSRCNN-TensorFlow) 16-0-4-1 parameters
     """
     super().__init__()
     self.layers = nn.Sequential(
       # Feature Extraction
       nn.Conv2d(in_channels=c, out_channels=d, kernel_size=5, padding=5//2, bias=True),
       nn.PReLU(d),
-      # Shrinking
-      nn.Conv2d(in_channels=d, out_channels=s, kernel_size=1, padding=1//2, bias=True),
-      nn.PReLU(s),
+      # Shrinking (if s != d)
+      *([
+        nn.Conv2d(in_channels=d, out_channels=s, kernel_size=1, padding=1//2, bias=True),
+        nn.PReLU(s),
+      ] if s != d else []),
       # Mapping
       *sum([[nn.Conv2d(in_channels=s, out_channels=s, kernel_size=3, padding=3//2, bias=True), nn.PReLU(s)] for _ in range(m)], []),
-      # Expanding
-      nn.Conv2d(in_channels=s, out_channels=d, kernel_size=1, padding=1//2, bias=True),
-      nn.PReLU(d),
+      # Expanding (if s != d)
+      *([
+        nn.Conv2d(in_channels=s, out_channels=d, kernel_size=1, padding=1//2, bias=True),
+        nn.PReLU(d),
+      ] if s != d else []),
       # Deconvolution
       nn.ConvTranspose2d(in_channels=d, out_channels=c, kernel_size=9, stride=scale, padding=9//2, output_padding=scale-1)
     )
