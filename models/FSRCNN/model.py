@@ -27,25 +27,35 @@ class FSRCNN(nn.Module):
       >>> FSRCNN(scale, d=16, s=16, m=4) # FSRCNNX (https://github.com/igv/FSRCNN-TensorFlow) 16-0-4-1 parameters
     """
     super().__init__()
-    self.layers = nn.Sequential(
-      # Feature Extraction
+    # Feature Extraction
+    self.feature_extraction = nn.Sequential(
       nn.Conv2d(in_channels=c, out_channels=d, kernel_size=5, padding=5//2, bias=True),
       nn.PReLU(d),
-      # Shrinking (if s != d)
-      *([
-        nn.Conv2d(in_channels=d, out_channels=s, kernel_size=1, padding=1//2, bias=True),
-        nn.PReLU(s),
-      ] if s != d else []),
-      # Mapping
-      *sum([[nn.Conv2d(in_channels=s, out_channels=s, kernel_size=3, padding=3//2, bias=True), nn.PReLU(s)] for _ in range(m)], []),
-      # Expanding (if s != d)
-      *([
-        nn.Conv2d(in_channels=s, out_channels=d, kernel_size=1, padding=1//2, bias=True),
-        nn.PReLU(d),
-      ] if s != d else []),
-      # Deconvolution
-      nn.ConvTranspose2d(in_channels=d, out_channels=c, kernel_size=9, stride=scale, padding=9//2, output_padding=scale-1)
     )
+    # Shrinking
+    self.shrinking = nn.Sequential(
+      nn.Conv2d(in_channels=d, out_channels=s, kernel_size=1, padding=1//2, bias=True),
+      nn.PReLU(s),
+    ) if s != d else nn.Identity()
+    # Mapping
+    self.mapping = nn.Sequential(
+      *sum([[
+        nn.Conv2d(in_channels=s, out_channels=s, kernel_size=3, padding=3//2, bias=True),
+        nn.PReLU(s)
+      ] for _ in range(m)], []),
+    )
+    # Expanding
+    self.expanding = nn.Sequential(
+      nn.Conv2d(in_channels=s, out_channels=d, kernel_size=1, padding=1//2, bias=True),
+      nn.PReLU(d)
+    ) if s != d else nn.Identity()
+    # Deconvolution
+    self.deconvolution = nn.ConvTranspose2d(in_channels=d, out_channels=c, kernel_size=9, stride=scale, padding=9//2, output_padding=scale-1)
 
   def forward(self, x):
-    return self.layers(x)
+    x = self.feature_extraction(x)
+    x = self.shrinking(x)
+    x = self.mapping(x)
+    x = self.expanding(x)
+    x = self.deconvolution(x)
+    return x

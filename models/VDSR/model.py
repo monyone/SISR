@@ -26,15 +26,20 @@ class VDSR(nn.Module):
       >>> VSDR() # typical VDSR parameters
     """
     super().__init__()
-    self.layers = nn.Sequential(
-      # Input
+    # Input Layer
+    self.input = nn.Sequential(
       nn.Conv2d(in_channels=c, out_channels=n, kernel_size=f, padding=f//2, bias=False),
-      nn.ReLU(inplace=True),
-      # Residual Layer
-      *sum([[nn.Conv2d(in_channels=n, out_channels=n, kernel_size=f, padding=f//2, bias=False), nn.ReLU(inplace=True)] for _ in range(d - 1)], []),
-      # Output
-      nn.Conv2d(in_channels=n, out_channels=c, kernel_size=f, padding=f//2, bias=False)
+      nn.ReLU(inplace=True)
     )
+    # Residual Layer
+    self.residual = nn.Sequential(
+      *sum([[
+        nn.Conv2d(in_channels=n, out_channels=n, kernel_size=f, padding=f//2, bias=False),
+        nn.ReLU(inplace=True)
+      ] for _ in range(d - 1)], []),
+    )
+    # Output Layer
+    self.output = nn.Conv2d(in_channels=n, out_channels=c, kernel_size=f, padding=f//2, bias=False)
 
     for m in self.modules():
       if isinstance(m, nn.Conv2d):
@@ -42,6 +47,8 @@ class VDSR(nn.Module):
 
   def forward(self, x):
     input = x
-    x = self.layers(x)
+    x = self.input(x)
+    x = self.residual(x)
+    x = self.output(x)
     x = torch.add(x, input)
     return x

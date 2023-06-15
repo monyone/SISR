@@ -7,7 +7,7 @@ import torch.nn as nn
 Super-Resolution Convolutional Neural Network (SRCNN)
 
 Site:
-  "Image Super-Resolution Using Deep Convolutional Networks (2014)" (https://arxiv.org/abs/1501.00092)
+  "Image Super-Resolution Using Deep Convolutional Networks (2014)" (https://arxiv.org/abs/1501.00092, https://mmlab.ie.cuhk.edu.hk/projects/SRCNN.html)
 """
 
 class SRCNN(nn.Module):
@@ -30,16 +30,21 @@ class SRCNN(nn.Module):
       >>> SRCNN(f2 = 3) # Large spatial size variant in 4.3.2 Filter size
     """
     super().__init__()
-    self.layers = nn.Sequential(
-      # Patch extraction and representation
+    # Patch extraction and representation
+    self.patch_extraction = nn.Sequential(
       nn.Conv2d(in_channels=c, out_channels=n1, kernel_size=f1, padding=f1//2, bias=True),
       nn.ReLU(inplace=True),
-      # Non-linear Mapping
+    )
+    # Non-linear Mapping
+    self.nonlinear_mapping = nn.Sequential(
       nn.Conv2d(in_channels=n1, out_channels=n2, kernel_size=f2, padding=f2//2, bias=True),
       nn.ReLU(inplace=True),
-      # Reconstruction
-      nn.Conv2d(in_channels=n2, out_channels=c, kernel_size=f3, padding=f3//2, bias=True)
     )
+    # Reconstruction
+    self.reconstruction = nn.Conv2d(in_channels=n2, out_channels=c, kernel_size=f3, padding=f3//2, bias=True)
 
   def forward(self, x):
-    return self.layers(x)
+    x = self.patch_extraction(x)
+    x = self.nonlinear_mapping(x)
+    x = self.reconstruction(x)
+    return x
