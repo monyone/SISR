@@ -8,9 +8,10 @@
 
 ## Models
 
-* [SRCNN(2014)](./models/SRCNN/)
-* [VDSR(2015)](./models/VDSR/)
-* [FSRCNN(2016)](./models/FSRCNN/)
+* [SRCNN (ECCV 2014)](./models/SRCNN/)
+* [VDSR (CVPR 2016)](./models/VDSR/)
+* [FSRCNN (ECCV 2016)](./models/FSRCNN/)
+* [DRCN (CVPR 2016)](./models/DRCR/)
 
 ## Usage
 

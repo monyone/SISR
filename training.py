@@ -14,6 +14,7 @@ from data.noninterpolated import NonInterpolatedImageDataset
 from models.SRCNN.model import SRCNN
 from models.VDSR.model import VDSR
 from models.FSRCNN.model import FSRCNN
+from models.DRCN.model import DRCN
 
 # PREFERENCE
 crop = 128
@@ -33,6 +34,7 @@ if __name__ == '__main__':
     'SRCNN': tuple([SRCNN(), InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), InterpolatedImageDataset(path=validate_path, crop=crop, scale=args.scale), nn.MSELoss(), 0.0001]),
     'VDSR': tuple([VDSR(), InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), InterpolatedImageDataset(path=validate_path, crop=crop, scale=args.scale), nn.MSELoss(), 0.0001]),
     'FSRCNN': tuple([FSRCNN(scale=args.scale), NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), NonInterpolatedImageDataset(path=validate_path, crop=crop, scale=args.scale), nn.MSELoss(), 0.0001]),
+    'DRCN': tuple([DRCN(), InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), InterpolatedImageDataset(path=validate_path, crop=crop, scale=args.scale), nn.MSELoss(), 0.0001]),
   }
 
   model, train_set, validation_set, loss, lr = models[args.model]
