@@ -36,7 +36,7 @@ class VDSR(nn.Module):
       *sum([[
         nn.Conv2d(in_channels=n, out_channels=n, kernel_size=f, padding=f//2, bias=False),
         nn.ReLU(inplace=True)
-      ] for _ in range(d - 1)], []),
+      ] for _ in range(max(0, d - 1))], []),
     )
     # Output Layer
     self.output = nn.Conv2d(in_channels=n, out_channels=c, kernel_size=f, padding=f//2, bias=False)

@@ -15,6 +15,7 @@ from models.SRCNN.model import SRCNN
 from models.VDSR.model import VDSR
 from models.FSRCNN.model import FSRCNN
 from models.DRCN.model import DRCN
+from models.ESPCN.model import ESPCN
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='PyTorch SISR (Single Image Super Resolution)')
@@ -30,6 +31,7 @@ if __name__ == '__main__':
     'VDSR': tuple([VDSR(), InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale)]),
     'FSRCNN': tuple([FSRCNN(scale=args.scale), NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale)]),
     'DRCN': tuple([DRCN(), InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale)]),
+    'ESPCN': tuple([ESPCN(scale=args.scale), NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale)]),
   }
 
   device: str = 'cuda' if cuda.is_available() else 'cpu'
@@ -44,8 +46,7 @@ if __name__ == '__main__':
     for _, lowres in dataloader:
       lowres = lowres.to(device)
       upscaled = model(lowres)
-      utils.save_image(lowres, str(f'./{args.image.stem}_lr{args.image.suffix}'), nrow=1)
-      utils.save_image(_, str(f'./{args.image.stem}_hr{args.image.suffix}'), nrow=1)
-      utils.save_image(upscaled - lowres, str(f'./{args.image.stem}_sr_d{args.image.suffix}'), nrow=1)
+      #utils.save_image(lowres, str(f'./{args.image.stem}_lr{args.image.suffix}'), nrow=1)
+      #utils.save_image(_, str(f'./{args.image.stem}_hr{args.image.suffix}'), nrow=1)
+      #utils.save_image(upscaled - lowres, str(f'./{args.image.stem}_sr_d{args.image.suffix}'), nrow=1)
       utils.save_image(upscaled, str(f'./{args.image.stem}_sr{args.image.suffix}'), nrow=1)
-      print(torch.nn.MSELoss()(upscaled, lowres))
