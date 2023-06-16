@@ -15,7 +15,7 @@ class FSRCNN(nn.Module):
     """FSRCNN's Constructor
 
     Args:
-      scale (int): number of scaling
+      scale (int): number of scaling factor
       c (int): number of channel the input/output image.
       d (int): number of feature map.
       m (int): number of mapping layers.
