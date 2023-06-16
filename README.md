@@ -12,6 +12,7 @@
 * [VDSR (CVPR 2016)](./models/VDSR/)
 * [FSRCNN (ECCV 2016)](./models/FSRCNN/)
 * [DRCN (CVPR 2016)](./models/DRCR/)
+* [ESPCN (CVPR 2016)](./models/ESPCN/)
 
 ## Usage
 
