@@ -51,7 +51,7 @@ class SRResNet(nn.Module):
       l (int): number of Residual Blocks.
 
     Examples:
-      >>> VSDR() # typical SRResNet parameters
+      >>> SRResNet() # typical SRResNet parameters
     """
     super().__init__()
     # Input Layer
@@ -59,16 +59,19 @@ class SRResNet(nn.Module):
       nn.Conv2d(in_channels=c, out_channels=n, kernel_size=f1, padding=f1//2, bias=False),
       nn.PReLU(n)
     )
+    # Residubal Blocks
     self.residual = nn.Sequential(
-      *[ResidualBlock(f2, n) for _ in range(l)]
+      *[ResidualBlock(f=f2, n=n) for _ in range(l)]
     )
     self.skip = nn.Sequential(
       nn.Conv2d(in_channels=n, out_channels=n, kernel_size=f2, padding=f2//2, bias=False),
       nn.BatchNorm2d(n),
     )
+    # Upscale Blocks
     self.upscale = nn.Sequential(
-      *[UpscaleBlock(2, f2, n) for _ in range(int(log(scale, 2)))]
+      *[UpscaleBlock(scale=2, f=f2, n=n) for _ in range(int(log(scale, 2)))]
     )
+    # Output Layer
     self.output = nn.Conv2d(in_channels=n, out_channels=c, kernel_size=f1, padding=f1//2, bias=False)
 
     for m in self.modules():
