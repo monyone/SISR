@@ -53,6 +53,5 @@ class DRCN(nn.Module):
   def forward(self, x):
     input = x
     x = self.embedding(x)
-    x = torch.mul(sum(torch.mul(self.reconstruction(x := self.inference(x)), self.weight[index]) for index in range(self.recursion)), 1 / torch.sum(self.weight))
-    x = torch.add(x, input)
-    return x
+    x = [self.reconstruction(x := self.inference(x)) for _ in range(self.recursion)]
+    return torch.add(torch.mul(sum(x), 1 / self.recursion), input), torch.add(torch.mul(sum(x * w for x, w in zip(x, self.weight)), 1 / torch.sum(self.weight)), input)

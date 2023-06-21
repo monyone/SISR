@@ -11,10 +11,12 @@ import torchvision.utils as utils
 from data.interpolated import InterpolatedImageDataset
 from data.noninterpolated import NonInterpolatedImageDataset
 
+from models.handler import DefaultHandler
 from models.SRCNN.model import SRCNN
 from models.VDSR.model import VDSR
 from models.FSRCNN.model import FSRCNN
 from models.DRCN.model import DRCN
+from models.DRCN.handler import DRCNHandler
 from models.ESPCN.model import ESPCN
 from models.SRResNet.model import SRResNet
 
@@ -28,28 +30,30 @@ if __name__ == '__main__':
   args = parser.parse_args()
 
   models = {
-    'SRCNN': tuple([SRCNN(), InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale)]),
-    'VDSR': tuple([VDSR(), InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale)]),
-    'FSRCNN': tuple([FSRCNN(scale=args.scale), NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale)]),
-    'DRCN': tuple([DRCN(), InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale)]),
-    'ESPCN': tuple([ESPCN(scale=args.scale), NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale)]),
-    'SRResNet': tuple([SRResNet(scale=args.scale), NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale)]),
+    'SRCNN': tuple([SRCNN(), DefaultHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale)]),
+    'VDSR': tuple([VDSR(), DefaultHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale)]),
+    'FSRCNN': tuple([FSRCNN(scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale)]),
+    'DRCN': tuple([DRCN(), DRCNHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale)]),
+    'ESPCN': tuple([ESPCN(scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale)]),
+    'SRResNet': tuple([SRResNet(scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale)]),
   }
 
   device: str = 'cuda' if cuda.is_available() else 'cpu'
-  model, dataset = models[args.model]
+  model, handler_class, dataset = models[args.model]
   model.load_state_dict(torch.load(str(args.state), map_location=device))
   dataloader = DataLoader(dataset=dataset, batch_size=1)
 
   model = model.to(device)
+  handler = handler_class(model)
 
   model.eval()
   with torch.no_grad():
     for _, lowres in dataloader:
       lowres = lowres.to(device)
-      upscaled = model(lowres)
-      print(torch.nn.MSELoss()(upscaled, _.to(device)))
+      upscaled = handler.test(lowres)
+      from math import log10
+      print(10 * log10(1 / torch.nn.MSELoss()(upscaled, _.to(device)).data))
       utils.save_image(lowres, str(f'./{args.image.stem}_lr{args.image.suffix}'), nrow=1)
       utils.save_image(_, str(f'./{args.image.stem}_hr{args.image.suffix}'), nrow=1)
-      utils.save_image(upscaled - torch.nn.functional.interpolate(lowres, size=None, scale_factor=2, mode='bicubic'), str(f'./{args.image.stem}_sr_d{args.image.suffix}'), nrow=1)
+      utils.save_image(upscaled - lowres, str(f'./{args.image.stem}_sr_d{args.image.suffix}'), nrow=1)
       utils.save_image(upscaled, str(f'./{args.image.stem}_sr{args.image.suffix}'), nrow=1)
