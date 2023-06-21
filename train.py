@@ -18,6 +18,7 @@ from models.FSRCNN.model import FSRCNN
 from models.DRCN.model import DRCN
 from models.DRCN.handler import DRCNHandler
 from models.ESPCN.model import ESPCN
+from models.REDNET.model import REDNET
 from models.SRResNet.model import SRResNet
 
 # PREFERENCE
@@ -40,6 +41,7 @@ if __name__ == '__main__':
     'FSRCNN': tuple([FSRCNN(scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), NonInterpolatedImageDataset(path=validate_path, crop=crop, scale=args.scale), 0.0001]),
     'DRCN': tuple([DRCN(), DRCNHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), InterpolatedImageDataset(path=validate_path, crop=crop, scale=args.scale), 0.0001]),
     'ESPCN': tuple([ESPCN(scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), NonInterpolatedImageDataset(path=validate_path, crop=crop, scale=args.scale), 0.0001]),
+    'REDNET': tuple([REDNET(), DefaultHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), InterpolatedImageDataset(path=validate_path, crop=crop, scale=args.scale), 0.0001]),
     'SRResNet': tuple([SRResNet(scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), NonInterpolatedImageDataset(path=validate_path, crop=crop, scale=args.scale), 0.0001]),
   }
 
