@@ -11,9 +11,9 @@
 * [SRCNN (ECCV 2014)](./models/SRCNN/)
 * [VDSR (CVPR 2016)](./models/VDSR/)
 * [FSRCNN (ECCV 2016)](./models/FSRCNN/)
-* [DRCN (CVPR 2016)](./models/DRCR/)
+* [DRCN (CVPR 2016)](./models/DRCN/)
 * [ESPCN (CVPR 2016)](./models/ESPCN/)
-* [SRResNet (CVPR 2016)](./models/SRResNet/)
+* [SRResNet (CVPR 2017)](./models/SRResNet/)
 
 ## Usage
 
