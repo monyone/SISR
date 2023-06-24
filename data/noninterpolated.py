@@ -21,7 +21,7 @@ class NonInterpolatedImageDataset(Dataset):
 
   def __getitem__(self, index) -> Any:
     path = self.paths[index % len(self)]
-    hires = io.read_image(path) / 255
+    hires = io.read_image(path, mode=io.ImageReadMode.RGB) / 255
     if self.crop is not None: hires = T.RandomCrop(self.crop)(hires)
     lowres = F.resize(img=hires, antialias=True, size=(tuple(map(lambda n: n // self.scale, hires.size()[1:3]))), interpolation=self.interpolation)
 

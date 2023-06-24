@@ -32,8 +32,7 @@ class Train:
     self.model.train()
     epoch_loss, epoch_psnr = 0, 0
     for batch in self.train_loader:
-      batch = list(map(lambda n: n.to(self.device), batch))
-      highres, lowres = Variable(batch[0]), Variable(batch[1])
+      highres, lowres = map(lambda n: n.to(self.device), batch)
 
       self.optimizer.zero_grad()
       loss = self.handler.loss(lowres, highres)
@@ -50,8 +49,7 @@ class Train:
     test_loss, test_psnr = 0, 0
     with torch.no_grad():
       for batch in self.test_loader:
-        batch = list(map(lambda n: n.to(self.device), batch))
-        highres, lowres = Variable(batch[0]), Variable(batch[1])
+        highres, lowres = map(lambda n: n.to(self.device), batch)
 
         loss, psnr = self.handler.statistics(lowres, highres)
         test_loss += loss

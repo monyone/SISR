@@ -22,9 +22,9 @@ from models.REDNET.model import REDNET
 from models.SRResNet.model import SRResNet
 
 # PREFERENCE
-crop = 128
+crop = 512
 train_path = './data/DIV2K/DIV2K_train_HR/*'
-validate_path = './data/DIV2K/DIV2K_valid_HR/*'
+validate_path = './data/SET5/*'
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='PyTorch SISR (Single Image Super Resolution)')
@@ -36,13 +36,13 @@ if __name__ == '__main__':
   args = parser.parse_args()
 
   models = {
-    'SRCNN': tuple([SRCNN(), DefaultHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), InterpolatedImageDataset(path=validate_path, crop=crop, scale=args.scale), 0.0001]),
-    'VDSR': tuple([VDSR(), DefaultHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), InterpolatedImageDataset(path=validate_path, crop=crop, scale=args.scale), 0.0001]),
-    'FSRCNN': tuple([FSRCNN(scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), NonInterpolatedImageDataset(path=validate_path, crop=crop, scale=args.scale), 0.0001]),
-    'DRCN': tuple([DRCN(), DRCNHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), InterpolatedImageDataset(path=validate_path, crop=crop, scale=args.scale), 0.0001]),
-    'ESPCN': tuple([ESPCN(scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), NonInterpolatedImageDataset(path=validate_path, crop=crop, scale=args.scale), 0.0001]),
-    'REDNET': tuple([REDNET(), DefaultHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), InterpolatedImageDataset(path=validate_path, crop=crop, scale=args.scale), 0.0001]),
-    'SRResNet': tuple([SRResNet(scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), NonInterpolatedImageDataset(path=validate_path, crop=crop, scale=args.scale), 0.0001]),
+    'SRCNN': tuple([SRCNN(), DefaultHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), InterpolatedImageDataset(path=validate_path, scale=args.scale), 0.0001]),
+    'VDSR': tuple([VDSR(c=1), DefaultHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), InterpolatedImageDataset(path=validate_path, scale=args.scale), 0.0001]),
+    'FSRCNN': tuple([FSRCNN(scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), NonInterpolatedImageDataset(path=validate_path, scale=args.scale), 0.0001]),
+    'DRCN': tuple([DRCN(), DRCNHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), InterpolatedImageDataset(path=validate_path, scale=args.scale), 0.0001]),
+    'ESPCN': tuple([ESPCN(scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), NonInterpolatedImageDataset(path=validate_path, scale=args.scale), 0.0001]),
+    'REDNET': tuple([REDNET(), DefaultHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), InterpolatedImageDataset(path=validate_path, scale=args.scale), 0.0001]),
+    'SRResNet': tuple([SRResNet(scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), NonInterpolatedImageDataset(path=validate_path, scale=args.scale), 0.0001]),
   }
 
   model, handler_class, train_set, validation_set, lr = models[args.model]
