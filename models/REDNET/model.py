@@ -28,7 +28,7 @@ class REDNET(nn.Module):
       nn.Conv2d(in_channels=c, out_channels=n, kernel_size=f, padding=f//2, bias=True),
       nn.ReLU(inplace=True),
     )
-    self.relu = nn.ReLU()
+    self.relu = nn.ReLU(inplace=True)
     self.convolution = nn.Sequential(
       *[nn.Conv2d(in_channels=n, out_channels=n, kernel_size=f, padding=f//2, bias=True) for _ in range(l)]
     )
