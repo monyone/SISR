@@ -44,7 +44,7 @@ class DRCN(nn.Module):
       nn.Conv2d(in_channels=n, out_channels=n, kernel_size=f, padding=f//2, bias=True),
       nn.Conv2d(in_channels=n, out_channels=c, kernel_size=f, padding=f//2, bias=True),
     )
-    self.weight = torch.mul(torch.ones(d) , 1 / d)
+    self.weight = nn.Parameter(torch.mul(torch.ones(d) , 1 / d))
 
     for m in self.modules():
       if isinstance(m, nn.Conv2d):

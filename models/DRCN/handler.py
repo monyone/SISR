@@ -11,7 +11,7 @@ class DRCNHandler(Handler):
   def __init__(self, model: DRCN):
     super().__init__()
     self.model = model
-    self.alpha = 1.0
+    self.alpha = 1
     self.criterion = nn.MSELoss()
     self.mse = nn.MSELoss()
 
