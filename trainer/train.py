@@ -39,8 +39,8 @@ class Train:
       loss.backward()
       self.optimizer.step()
 
-      epoch_loss += cast(float, loss.data)
-      epoch_psnr += 10 * log10(1 / cast(float, loss.data))
+      epoch_loss += cast(float, loss.item())
+      epoch_psnr += 10 * log10(1 / cast(float, loss.item())) if loss.item() != 0 else 100
 
     print('[epoch:{}, train]: Loss: {:.4f}, PSNR: {:.4f} dB'.format(epoch, epoch_loss / len(self.train_loader), epoch_psnr / len(self.train_loader)))
 
