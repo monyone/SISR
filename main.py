@@ -54,8 +54,9 @@ if __name__ == '__main__':
       lowres = lowres.to(device)
       upscaled = handler.test(lowres)
       from math import log10
-      print(10 * log10(1 / torch.nn.MSELoss()(upscaled, _.to(device)).data))
-      utils.save_image(lowres, str(f'./{args.image.stem}_lr{args.image.suffix}'), nrow=1)
-      utils.save_image(_, str(f'./{args.image.stem}_hr{args.image.suffix}'), nrow=1)
-      utils.save_image(upscaled - lowres, str(f'./{args.image.stem}_sr_d{args.image.suffix}'), nrow=1)
+      #print(10 * log10(1 / torch.nn.MSELoss()(upscaled, _.to(device)).data))
+      #utils.save_image(lowres, str(f'./{args.image.stem}_lr{args.image.suffix}'), nrow=1)
+      #utils.save_image(_, str(f'./{args.image.stem}_hr{args.image.suffix}'), nrow=1)
+      #utils.save_image(torch.abs(upscaled - _.to(device)), str(f'./{args.image.stem}_sr_ud{args.image.suffix}'), nrow=1)
+      #utils.save_image(torch.abs(upscaled - lowres), str(f'./{args.image.stem}_sr_ld{args.image.suffix}'), nrow=1)
       utils.save_image(upscaled, str(f'./{args.image.stem}_sr{args.image.suffix}'), nrow=1)

@@ -22,8 +22,8 @@ from models.REDNET.model import REDNET
 from models.SRResNet.model import SRResNet
 
 # PREFERENCE
-crop = 128
-train_path = './data/DIV2K/DIV2K_train_HR/*'
+crop = None
+train_path = './data/DIV2K/DIV2K_train_HR_Patches/*'
 validate_path = './data/SET5/*'
 
 if __name__ == '__main__':
@@ -48,12 +48,10 @@ if __name__ == '__main__':
   model, handler_class, train_set, validation_set, lr = models[args.model]
   optimizer = optim.Adam(model.parameters(), lr=lr)
   scheduler = optim.lr_scheduler.ConstantLR(optimizer, last_epoch=-1)
-  if args.model == 'VDSR':
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.epochs // 4, gamma=0.1)
   handler = handler_class(model)
 
-  train_loader = DataLoader(dataset=train_set, batch_size=args.batch, num_workers=os.cpu_count(), shuffle=True)
-  validation_loader = DataLoader(dataset=validation_set, batch_size=args.batch, num_workers=os.cpu_count(), shuffle=True)
+  train_loader = DataLoader(dataset=train_set, batch_size=args.batch, num_workers=os.cpu_count(), pin_memory=True)
+  validation_loader = DataLoader(dataset=validation_set, batch_size=args.batch, num_workers=os.cpu_count(), pin_memory=True)
 
   train = Train(model=model, optimizer=optimizer, scheduler=scheduler, handler=handler, seed=None, train_loader=train_loader, test_loader=validation_loader)
   train.run(epochs=args.epochs, save_dir=Path(f'./result/{args.model}_x{args.scale}'), save_prefix='state')
