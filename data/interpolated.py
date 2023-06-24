@@ -9,9 +9,9 @@ from glob import glob
 from typing import Any
 
 class InterpolatedImageDataset(Dataset):
-  def __init__(self, path: str, crop: int | None = None, scale: int = 2, interpolation: T.InterpolationMode = T.InterpolationMode.BICUBIC) -> None:
+  def __init__(self, path: str or list[str], crop: int | None = None, scale: int = 2, interpolation: T.InterpolationMode = T.InterpolationMode.BICUBIC) -> None:
     super().__init__()
-    self.paths = list(glob(path))
+    self.paths = sum(map(list, map(glob, path if type(path) is list else [path])), [])
     self.crop = crop
     self.scale = scale
     self.interpolation = interpolation
