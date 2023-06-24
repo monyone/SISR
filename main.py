@@ -28,16 +28,18 @@ if __name__ == '__main__':
   parser.add_argument('--crop', type=int, help="Crop size")
   parser.add_argument('--scale', type=int, default=1, help="Downscale factor")
   parser.add_argument('--state', type=Path, required=True, help="Trained state Path")
+  parser.add_argument('--y_only', action='store_true', help="Train y color only")
+
   args = parser.parse_args()
 
   models = {
-    'SRCNN': tuple([SRCNN(), DefaultHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale)]),
-    'VDSR': tuple([VDSR(), DefaultHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale)]),
-    'FSRCNN': tuple([FSRCNN(scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale)]),
-    'DRCN': tuple([DRCN(), DRCNHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale)]),
-    'ESPCN': tuple([ESPCN(scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale)]),
-    'REDNET': tuple([REDNET(), DefaultHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale)]),
-    'SRResNet': tuple([SRResNet(scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale)]),
+    'SRCNN': tuple([SRCNN(c=(1 if args.y_only else 3)), DefaultHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only)]),
+    'VDSR': tuple([VDSR(c=(1 if args.y_only else 3)), DefaultHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only)]),
+    'FSRCNN': tuple([FSRCNN(c=(1 if args.y_only else 3), scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only)]),
+    'DRCN': tuple([DRCN(c=(1 if args.y_only else 3)), DRCNHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only)]),
+    'ESPCN': tuple([ESPCN(c=(1 if args.y_only else 3), scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only)]),
+    'REDNET': tuple([REDNET(c=(1 if args.y_only else 3)), DefaultHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only)]),
+    'SRResNet': tuple([SRResNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only)]),
   }
 
   device: str = 'cuda' if cuda.is_available() else 'cpu'
