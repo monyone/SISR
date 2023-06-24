@@ -39,8 +39,8 @@ class DefaultHandler(Handler):
   def statistics(self, input, target):
     with torch.no_grad():
       sr = self.model(input)
-      loss = cast(float, self.criterion(sr, target).data)
-      return loss, 10 * log10(1 / loss)
+      loss = cast(float, self.criterion(sr, target).item())
+      return loss, 10 * log10(1 / loss) if loss != 0 else 100
 
   def step(self, epoch: int, epochs: int) -> None:
     pass

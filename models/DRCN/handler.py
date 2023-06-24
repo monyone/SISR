@@ -25,8 +25,8 @@ class DRCNHandler(Handler):
   def statistics(self, input, target):
     with torch.no_grad():
       _, sr = self.model(input)
-      loss = cast(float, self.mse(sr, target).data)
-      return loss, 10 * log10(1 / loss)
+      loss = cast(float, self.mse(sr, target).item())
+      return loss, 10 * log10(1 / loss) if loss != 0 else 100
 
   def step(self, epoch: int, epochs: int) -> None:
     self.alpha = max(0, min(1, 1 - (epoch * 4 / epochs)))

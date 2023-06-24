@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 import argparse
+import os
 from pathlib import Path
 
-import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
@@ -22,7 +22,7 @@ from models.REDNET.model import REDNET
 from models.SRResNet.model import SRResNet
 
 # PREFERENCE
-crop = 512
+crop = 128
 train_path = './data/DIV2K/DIV2K_train_HR/*'
 validate_path = './data/SET5/*'
 
@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
   models = {
     'SRCNN': tuple([SRCNN(), DefaultHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), InterpolatedImageDataset(path=validate_path, scale=args.scale), 0.0001]),
-    'VDSR': tuple([VDSR(c=1), DefaultHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), InterpolatedImageDataset(path=validate_path, scale=args.scale), 0.0001]),
+    'VDSR': tuple([VDSR(), DefaultHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), InterpolatedImageDataset(path=validate_path, scale=args.scale), 0.0001]),
     'FSRCNN': tuple([FSRCNN(scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), NonInterpolatedImageDataset(path=validate_path, scale=args.scale), 0.0001]),
     'DRCN': tuple([DRCN(), DRCNHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), InterpolatedImageDataset(path=validate_path, scale=args.scale), 0.0001]),
     'ESPCN': tuple([ESPCN(scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale), NonInterpolatedImageDataset(path=validate_path, scale=args.scale), 0.0001]),
@@ -52,8 +52,8 @@ if __name__ == '__main__':
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.epochs // 4, gamma=0.1)
   handler = handler_class(model)
 
-  train_loader = DataLoader(dataset=train_set, batch_size=args.batch, shuffle=True)
-  validation_loader = DataLoader(dataset=validation_set, batch_size=args.batch, shuffle=True)
+  train_loader = DataLoader(dataset=train_set, batch_size=args.batch, num_workers=os.cpu_count(), shuffle=True)
+  validation_loader = DataLoader(dataset=validation_set, batch_size=args.batch, num_workers=os.cpu_count(), shuffle=True)
 
   train = Train(model=model, optimizer=optimizer, scheduler=scheduler, handler=handler, seed=None, train_loader=train_loader, test_loader=validation_loader)
   train.run(epochs=args.epochs, save_dir=Path(f'./result/{args.model}_x{args.scale}'), save_prefix='state')
