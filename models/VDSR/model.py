@@ -44,6 +44,7 @@ class VDSR(nn.Module):
     for m in self.modules():
       if isinstance(m, nn.Conv2d):
         m.weight.data.normal_(0, sqrt(2. / (m.kernel_size[0] * m.kernel_size[1] * m.out_channels)))
+        if m.bias is not None: m.bias.data.zero_()
 
   def forward(self, x):
     input = x

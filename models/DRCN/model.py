@@ -29,26 +29,27 @@ class DRCN(nn.Module):
     self.recursion = d
     # embedding net
     self.embedding = nn.Sequential(
-      nn.Conv2d(in_channels=c, out_channels=n, kernel_size=f, padding=f//2, bias=True),
+      nn.Conv2d(in_channels=c, out_channels=n, kernel_size=f, padding=f//2, bias=False),
       nn.ReLU(inplace=True),
-      nn.Conv2d(in_channels=n, out_channels=n, kernel_size=f, padding=f//2, bias=True),
+      nn.Conv2d(in_channels=n, out_channels=n, kernel_size=f, padding=f//2, bias=False),
       nn.ReLU(inplace=True)
     )
     # Inference Net
     self.inference = nn.Sequential(
-      nn.Conv2d(in_channels=n, out_channels=n, kernel_size=f, padding=f//2, bias=True),
+      nn.Conv2d(in_channels=n, out_channels=n, kernel_size=f, padding=f//2, bias=False),
       nn.ReLU(inplace=True)
     )
     # Reconstruction Net
     self.reconstruction = nn.Sequential(
-      nn.Conv2d(in_channels=n, out_channels=n, kernel_size=f, padding=f//2, bias=True),
-      nn.Conv2d(in_channels=n, out_channels=c, kernel_size=f, padding=f//2, bias=True),
+      nn.Conv2d(in_channels=n, out_channels=n, kernel_size=f, padding=f//2, bias=False),
+      nn.Conv2d(in_channels=n, out_channels=c, kernel_size=f, padding=f//2, bias=False),
     )
     self.weight = nn.Parameter(torch.mul(torch.ones(d) , 1 / d))
 
     for m in self.modules():
       if isinstance(m, nn.Conv2d):
         m.weight.data.normal_(0, sqrt(2. / (m.kernel_size[0] * m.kernel_size[1] * m.out_channels)))
+        if m.bias is not None: m.bias.data.zero_()
 
   def forward(self, x):
     input = x
