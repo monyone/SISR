@@ -23,6 +23,8 @@ from models.REDNet.model import REDNet
 from models.DRRN.model import DRRN
 from models.LapSRN.model import LapSRN
 from models.LapSRN.handler import LapSRNHandler
+from models.MSLapSRN.model import MSLapSRN
+from models.MSLapSRN.handler import MSLapSRNHandler
 from models.SRResNet.model import SRResNet
 
 # PREFERENCE
@@ -50,6 +52,7 @@ if __name__ == '__main__':
     'RED-Net': tuple([REDNet(c=(1 if args.y_only else 3)), DefaultHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), InterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'DRRN': tuple([DRRN(c=(1 if args.y_only else 3)), DefaultHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), InterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'LapSRN': tuple([LapSRN(c=(1 if args.y_only else 3), scale=args.scale), LapSRNHandler, MultiScaledImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), MultiScaledImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'MSLapSRN': tuple([MSLapSRN(c=(1 if args.y_only else 3), scale=args.scale), MSLapSRNHandler, MultiScaledImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), MultiScaledImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'SRResNet': tuple([SRResNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
   }
 

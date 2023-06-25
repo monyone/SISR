@@ -15,6 +15,7 @@
 * [DRCN (CVPR 2016)](./models/DRCN/)
 * [RED-Net (CVPR 2016)](./models/REDNet/)
 * [DRRN (CVPR 2017)](./models/DRRN/)
+* [LapSRN (CVPR 2017)](./models/LapSRN/), [MSLapSRN](./models/MSLapSRN/)
 * [SRResNet (CVPR 2017)](./models/SRResNet/)
 
 ## Usage
