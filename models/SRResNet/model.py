@@ -78,6 +78,9 @@ class SRResNet(nn.Module):
       if isinstance(m, nn.Conv2d):
         m.weight.data.normal_(0, sqrt(2. / (m.kernel_size[0] * m.kernel_size[1] * m.out_channels)))
         if m.bias is not None: m.bias.data.zero_()
+      elif isinstance(m, nn.BatchNorm2d):
+        m.weight.data.normal_(0, sqrt(2. / (n * n)))
+        if m.bias is not None: m.bias.data.zero_()
 
 
   def forward(self, x):
