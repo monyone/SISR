@@ -9,11 +9,12 @@
 ## Models
 
 * [SRCNN (ECCV 2014)](./models/SRCNN/)
-* [VDSR (CVPR 2016)](./models/VDSR/)
 * [FSRCNN (ECCV 2016)](./models/FSRCNN/)
-* [DRCN (CVPR 2016)](./models/DRCN/)
 * [ESPCN (CVPR 2016)](./models/ESPCN/)
-* [RED-NET (CVPR 2016)](./models/REDNET/)
+* [VDSR (CVPR 2016)](./models/VDSR/)
+* [DRCN (CVPR 2016)](./models/DRCN/)
+* [RED-Net (CVPR 2016)](./models/REDNet/)
+* [DRRN (CVPR 2017)](./models/DRRN/)
 * [SRResNet (CVPR 2017)](./models/SRResNet/)
 
 ## Usage

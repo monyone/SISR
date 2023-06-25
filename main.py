@@ -18,7 +18,8 @@ from models.FSRCNN.model import FSRCNN
 from models.DRCN.model import DRCN
 from models.DRCN.handler import DRCNHandler
 from models.ESPCN.model import ESPCN
-from models.REDNET.model import REDNET
+from models.REDNet.model import REDNet
+from models.DRRN.model import DRRN
 from models.SRResNet.model import SRResNet
 
 if __name__ == '__main__':
@@ -38,7 +39,8 @@ if __name__ == '__main__':
     'FSRCNN': tuple([FSRCNN(c=(1 if args.y_only else 3), scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only)]),
     'DRCN': tuple([DRCN(c=(1 if args.y_only else 3)), DRCNHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only)]),
     'ESPCN': tuple([ESPCN(c=(1 if args.y_only else 3), scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only)]),
-    'REDNET': tuple([REDNET(c=(1 if args.y_only else 3)), DefaultHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only)]),
+    'RED-Net': tuple([REDNet(c=(1 if args.y_only else 3)), DefaultHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only)]),
+    'DRRN': tuple([DRRN(c=(1 if args.y_only else 3)), DefaultHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only)]),
     'SRResNet': tuple([SRResNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only)]),
   }
 

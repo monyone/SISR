@@ -1,17 +1,17 @@
 import torch
 import torch.nn as nn
 
-"""REDNET Model
+"""RED-Net Model
 
-very deep Residual Encoder-Decoder Networks (RED-NET)
+very deep Residual Encoder-Decoder Networks (RED-Net)
 
 Site:
-  "Image Restoration Using Very Deep Convolutional Encoder-Decoder Networks with Symmetric Skip Connections" ()
+  "Image Restoration Using Very Deep Convolutional Encoder-Decoder Networks with Symmetric Skip Connections (2016)" (https://arxiv.org/abs/1603.09056)
 """
 
-class REDNET(nn.Module):
+class REDNet(nn.Module):
   def __init__(self, c: int = 3, f: int = 3, n: int = 64, l: int = 15) -> None:
-    """REDNET's Constructor
+    """REDNet's Constructor
 
     Args:
       c (int): number of channel the input/output image.
@@ -20,8 +20,8 @@ class REDNET(nn.Module):
       l (int): number of layers
 
     Examples:
-      >>> REDNET() # typical RED-NET30 parameters
-      >>> REDNET(l=10) # typical RED-NET20 parameters
+      >>> REDNet() # typical RED-NET30 parameters
+      >>> REDNet(l=10) # typical RED-NET20 parameters
     """
     super().__init__()
     self.input = nn.Sequential(

@@ -18,7 +18,8 @@ from models.FSRCNN.model import FSRCNN
 from models.DRCN.model import DRCN
 from models.DRCN.handler import DRCNHandler
 from models.ESPCN.model import ESPCN
-from models.REDNET.model import REDNET
+from models.REDNet.model import REDNet
+from models.DRRN.model import DRRN
 from models.SRResNet.model import SRResNet
 
 # PREFERENCE
@@ -43,7 +44,8 @@ if __name__ == '__main__':
     'FSRCNN': tuple([FSRCNN(scale=args.scale, c=(1 if args.y_only else 3)), DefaultHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'DRCN': tuple([DRCN(c=(1 if args.y_only else 3)), DRCNHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), InterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'ESPCN': tuple([ESPCN(c=(1 if args.y_only else 3), scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
-    'REDNET': tuple([REDNET(c=(1 if args.y_only else 3)), DefaultHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), InterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'RED-Net': tuple([REDNet(c=(1 if args.y_only else 3)), DefaultHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), InterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'DRRN': tuple([DRRN(c=(1 if args.y_only else 3)), DefaultHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), InterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'SRResNet': tuple([SRResNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
   }
 
