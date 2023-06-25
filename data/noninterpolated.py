@@ -4,7 +4,6 @@ import torchvision.io as io
 import torchvision.transforms.functional as F
 import torchvision.transforms as T
 
-from pathlib import Path
 from glob import glob
 
 from typing import Any

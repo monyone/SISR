@@ -4,11 +4,12 @@ import torchvision.io as io
 import torchvision.transforms.functional as F
 import torchvision.transforms as T
 
+from math import log
 from glob import glob
 
 from typing import Any
 
-class InterpolatedImageDataset(Dataset):
+class MultiScaledImageDataset(Dataset):
   def __init__(self, path: str or list[str], crop: int | None = None, scale: int = 2, interpolation: T.InterpolationMode = T.InterpolationMode.BICUBIC, y_only: bool = False) -> None:
     super().__init__()
     self.paths = sum(map(list, map(glob, path if type(path) is list else [path])), [])
@@ -26,17 +27,6 @@ class InterpolatedImageDataset(Dataset):
     if self.y_only:
       hires = torch.unsqueeze(input=((16 + (64.738 * hires[0, :, :] + 129.057 * hires[1, :, :] + 25.064 * hires[2, :, :])) / 256), dim=0)
     if self.crop is not None: hires = T.RandomCrop(self.crop)(hires)
+    lowres = [F.resize(img=hires, antialias=True, size=(tuple(map(lambda n: n // (2 ** (idx + 1)), hires.size()[1:3]))), interpolation=self.interpolation) for idx in range(int(log(self.scale, 2)))]
 
-    lowres = F.resize(
-      img=F.resize(
-        img=hires,
-        antialias=True,
-        size=(tuple(map(lambda n: n // self.scale, hires.size()[1:3]))),
-        interpolation=self.interpolation
-      ),
-      antialias=True,
-      size=hires.size()[1:3],
-      interpolation=self.interpolation
-    )
-
-    return hires, lowres
+    return list(reversed([hires, *lowres[:-1]])), lowres[-1]
