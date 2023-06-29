@@ -16,5 +16,5 @@
 * Reconstruction
   * 高解像度向けの特徴から画像を再構成する
 
-[^NIN]([Network In Network](https://arxiv.org/abs/1312.4400))
+[^NIN]: ([Network In Network](https://arxiv.org/abs/1312.4400))
 [^1x1]: [CVMLエキスパートガイド 1x1 畳み込み (1x1 Convolution, 点単位畳み込み層)] (https://cvml-expertguide.net/terms/dl/layers/convolution-layer/1x1-convolution/)
