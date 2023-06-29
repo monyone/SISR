@@ -6,4 +6,4 @@
 * 拡大前の画像の特徴を抽出し、Transposed Convolution [^Deconolution] で拡大しつつ再構成を行う
 * ただし、Transposed Convolution は Checkerboard Artifacts が発生しやすい
 
-[^Deconolution]: [CVMLエキスパートガイド 転置畳み込み(TransposedConvolution,Deconolution)] (https://cvml-expertguide.net/terms/dl/layers/convolution-layer/transposed-convolution/)
+[^Deconolution]: [CVMLエキスパートガイド 転置畳み込み(TransposedConvolution,Deconolution)](https://cvml-expertguide.net/terms/dl/layers/convolution-layer/transposed-convolution/)
