@@ -8,15 +8,15 @@
 
 ## Models
 
-* [SRCNN (ECCV 2014)](./models/SRCNN/)
-* [FSRCNN (ECCV 2016)](./models/FSRCNN/)
-* [ESPCN (CVPR 2016)](./models/ESPCN/)
-* [VDSR (CVPR 2016)](./models/VDSR/)
-* [DRCN (CVPR 2016)](./models/DRCN/)
-* [RED-Net (CVPR 2016)](./models/REDNet/)
-* [DRRN (CVPR 2017)](./models/DRRN/)
-* [LapSRN (CVPR 2017)](./models/LapSRN/), [MSLapSRN](./models/MSLapSRN/)
-* [SRResNet (CVPR 2017)](./models/SRResNet/)
+* [SRCNN (ECCV 2014)](./models/SRCNN/) [[Paper]](https://arxiv.org/abs/1501.00092)
+* [FSRCNN (ECCV 2016)](./models/FSRCNN/) [[Paper]](https://arxiv.org/abs/1608.00367)
+* [ESPCN (CVPR 2016)](./models/ESPCN/) [[Paper]](https://arxiv.org/abs/1609.05158)
+* [VDSR (CVPR 2016)](./models/VDSR/) [[Paper]](https://arxiv.org/abs/1511.04587)
+* [DRCN (CVPR 2016)](./models/DRCN/) [[Paper]](https://arxiv.org/abs/1511.04491)
+* [RED-Net (CVPR 2016)](./models/REDNet/) [[Paper]](https://arxiv.org/abs/1603.09056)
+* [DRRN (CVPR 2017)](./models/DRRN/) [[Paper]](https://ieeexplore.ieee.org/document/8099781)
+* [LapSRN (CVPR 2017)](./models/LapSRN/) [[Paper]](https://arxiv.org/abs/1704.03915), [MSLapSRN](./models/MSLapSRN/) [[Paper]](https://arxiv.org/abs/1710.01992)
+* [SRResNet (CVPR 2017)](./models/SRResNet/) [[Paper]](https://arxiv.org/abs/1609.04802)
 
 ## Usage
 
