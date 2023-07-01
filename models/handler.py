@@ -8,13 +8,15 @@ from abc import ABC, abstractmethod
 
 class Handler(ABC):
   def __init__(self):
-    self.mseloss = nn.MSELoss()
-
-  @abstractmethod
-  def loss(self, input, target):
     pass
 
+  def to(self, device: str):
+    return self
+
   @abstractmethod
+  def train(self, input, target):
+    pass
+
   def step(self, epoch: int, epochs: int):
     pass
 
@@ -32,18 +34,18 @@ class DefaultHandler(Handler):
     self.model = model
     self.criterion = nn.MSELoss()
 
-  def loss(self, input, target):
+  def to(self, device: str) -> Handler:
+    return self
+
+  def train(self, input, target):
     sr = self.model(input)
-    return self.criterion(sr, target)
+    return sr, self.criterion(sr, target)
 
   def statistics(self, input, target):
     with torch.no_grad():
       sr = self.model(input).clamp_(0, 1)
       loss = cast(float, self.criterion(sr, target).item())
       return loss, 10 * log10(1 / loss) if loss != 0 else 100
-
-  def step(self, epoch: int, epochs: int) -> None:
-    pass
 
   def test(self, input):
     return self.model(input).clamp_(0, 1)

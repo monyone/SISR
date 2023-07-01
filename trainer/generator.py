@@ -13,14 +13,14 @@ from torch.autograd import Variable
 
 from models.handler import Handler
 
-class Train:
-  def __init__(self, model: nn.Module, optimizer: optim.Optimizer, scheduler: optim.lr_scheduler.LRScheduler, handler: Handler, seed: int | None, train_loader: DataLoader, test_loader: DataLoader) -> None:
+class GeneratorTrainer:
+  def __init__(self, model: nn.Module, optimizer: optim.Optimizer, handler: Handler, state: str | None, seed: int | None, train_loader: DataLoader, test_loader: DataLoader) -> None:
     super().__init__()
     self.device: str = 'cuda' if cuda.is_available() else 'cpu'
     self.model: nn.Module = model.to(self.device)
+    if state is not None: self.model.load_state_dict(torch.load(str(state), map_location=self.device))
     self.optimizer: optim.Optimizer = optimizer
-    self.scheduler: optim.lr_scheduler.LRScheduler = scheduler
-    self.handler: Handler = handler
+    self.handler: Handler = handler.to(self.device)
     self.train_loader: DataLoader = train_loader
     self.test_loader: DataLoader = test_loader
     if seed is None: return
@@ -37,7 +37,7 @@ class Train:
       lowres = tuple(map(lambda n: n.to(self.device), lowres)) if type(lowres) is list else lowres.to(self.device)
 
       self.optimizer.zero_grad()
-      loss = self.handler.loss(lowres, highres)
+      _, loss = self.handler.train(lowres, highres)
       loss.backward()
       self.optimizer.step()
 
@@ -64,7 +64,6 @@ class Train:
     os.makedirs(save_dir, exist_ok=True)
     for epoch in range(epochs):
       self.train(epoch=epoch)
-      self.scheduler.step()
       self.handler.step(epoch, epochs)
 
       self.test(epoch=epoch)

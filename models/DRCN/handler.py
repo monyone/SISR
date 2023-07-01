@@ -15,12 +15,12 @@ class DRCNHandler(Handler):
     self.criterion = nn.MSELoss()
     self.mse = nn.MSELoss()
 
-  def loss(self, input, target):
+  def train(self, input, target):
     average, sr = self.model(input)
     loss1 = self.criterion(average, target)
     loss2 = self.criterion(sr, target)
     loss = self.alpha * loss1 + (1 - self.alpha) * loss2
-    return loss
+    return sr, loss
 
   def statistics(self, input, target):
     with torch.no_grad():

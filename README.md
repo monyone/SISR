@@ -22,9 +22,18 @@
 
 ### Train
 
+#### Geneator
+
 ```bash
-./train.py --model [ONE_OF_ABOVE_MODELS] --epoch ${epochs} --scale ${upscale_factor}
+./train.py --generator [ONE_OF_ABOVE_MODELS] --epoch ${epochs} --scale ${upscale_factor}
 ```
+
+### GAN
+
+```bash
+./train.py --generator [ONE_OF_ABOVE_MODELS] --discriminator [ONE_OF_ABOVE_DISCRIMINATIOR] --epoch ${epochs} --scale ${upscale_factor}
+```
+
 
 ### Super Resolution
 

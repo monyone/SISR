@@ -4,10 +4,13 @@ import argparse
 import os
 from pathlib import Path
 
+import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from trainer.train import Train
+from trainer.generator import GeneratorTrainer
+from trainer.gan import GANTrainer
+
 from data.interpolated import InterpolatedImageDataset
 from data.noninterpolated import NonInterpolatedImageDataset
 from data.multiscaled import MultiScaledImageDataset
@@ -26,24 +29,28 @@ from models.LapSRN.handler import LapSRNHandler
 from models.MSLapSRN.model import MSLapSRN
 from models.MSLapSRN.handler import MSLapSRNHandler
 from models.SRResNet.model import SRResNet
+from models.SRGAN.model import SRGAN
+from models.SRGAN.handler import SRGANGeneratorHandler, SRGANDiscriminatorHandler
 
 # PREFERENCE
 crop = None
-#train_path = './data/DIV2K/DIV2K_train_HR_Patches/*'
-train_path = ['./data/T91/Patches/*.png']
+train_path = './data/DIV2K/DIV2K_train_HR_Patches/*'
+# train_path = ['./data/T91/Patches/*.png']
 validate_path = './data/SET5/*'
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='PyTorch SISR (Single Image Super Resolution)')
   parser.add_argument('--epochs', type=int, default=10, help="Number of Epochs")
-  parser.add_argument('--model', type=str, required=True, help="SISR model")
+  parser.add_argument('--generator', type=str, required=True, help="SISR generator model")
+  parser.add_argument('--generator_state', type=str, help="SISR generator state")
+  parser.add_argument('--discriminator', type=str, help="SISR discriminator model")
   parser.add_argument('--scale', type=int, default=2, help="Upscaling scale factor")
   parser.add_argument('--batch', type=int, default=1, help="Batch size")
   parser.add_argument('--y_only', action='store_true', help="Train y color only")
 
   args = parser.parse_args()
 
-  models = {
+  generator_models = {
     'SRCNN': tuple([SRCNN(c=(1 if args.y_only else 3)), DefaultHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), InterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'VDSR': tuple([VDSR(c=(1 if args.y_only else 3)), DefaultHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), InterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'FSRCNN': tuple([FSRCNN(scale=args.scale, c=(1 if args.y_only else 3)), DefaultHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
@@ -56,13 +63,28 @@ if __name__ == '__main__':
     'SRResNet': tuple([SRResNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
   }
 
-  model, handler_class, train_set, validation_set, lr = models[args.model]
-  optimizer = optim.Adam(model.parameters(), lr=lr)
-  scheduler = optim.lr_scheduler.ConstantLR(optimizer=optimizer, last_epoch=-1)
-  handler = handler_class(model)
+  discriminator_models = {
+    'SRGAN': tuple([SRGAN((1 if args.y_only else 3), size=(128, 128)), SRGANGeneratorHandler, SRGANDiscriminatorHandler, 0.0001])
+  }
 
+  generator_model, geneartor_handler_class, train_set, validation_set, generator_lr = generator_models[args.generator]
   train_loader = DataLoader(dataset=train_set, batch_size=args.batch, num_workers=os.cpu_count(), pin_memory=True)
   validation_loader = DataLoader(dataset=validation_set, num_workers=os.cpu_count(), pin_memory=True)
+  if args.discriminator in discriminator_models:
+    discriminator_model, updated_generator_handler_class, discriminator_handler_class, discriminator_lr = discriminator_models[args.discriminator]
 
-  train = Train(model=model, optimizer=optimizer, scheduler=scheduler, handler=handler, seed=None, train_loader=train_loader, test_loader=validation_loader)
-  train.run(epochs=args.epochs, save_dir=Path(f'./result/{args.model}_x{args.scale}'), save_prefix='state')
+    g_optimizer = optim.Adam(generator_model.parameters(), lr=generator_lr)
+    g_handler = updated_generator_handler_class(generator_model, geneartor_handler_class(generator_model)) if geneartor_handler_class is not None else updated_generator_handler_class(generator_model)
+    d_optimizer = optim.Adam(discriminator_model.parameters(), lr=discriminator_lr)
+    d_handler = discriminator_handler_class(discriminator_model)
+    g_state = args.generator_state
+
+    train = GANTrainer(g_model=generator_model, d_model=discriminator_model, g_optimizer=g_optimizer, g_handler=g_handler, g_state=g_state, d_optimizer=d_optimizer, d_handler=d_handler, seed=None, train_loader=train_loader, test_loader=validation_loader)
+    train.run(epochs=args.epochs, save_dir=Path(f'./result/{args.discriminator}_x{args.scale}'), save_prefix='state')
+  else:
+    optimizer = optim.Adam(generator_model.parameters(), lr=generator_lr)
+    handler = geneartor_handler_class(generator_model)
+    state = args.generator_state
+
+    train = GeneratorTrainer(model=generator_model, optimizer=optimizer, handler=handler, seed=None, train_loader=train_loader, state=state, test_loader=validation_loader)
+    train.run(epochs=args.epochs, save_dir=Path(f'./result/{args.generator}_x{args.scale}'), save_prefix='state')
