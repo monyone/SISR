@@ -28,6 +28,7 @@ class SRGANGeneratorHandler(Handler):
     super().__init__()
     self.model = model
     self.handler = handler
+    self.mse_loss = nn.MSELoss()
     self.content_loss = VGGLoss()
 
   def to(self, device: str) -> Handler:

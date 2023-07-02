@@ -25,6 +25,7 @@ from models.LapSRN.model import LapSRN
 from models.LapSRN.handler import LapSRNHandler
 from models.MSLapSRN.model import MSLapSRN
 from models.MSLapSRN.handler import MSLapSRNHandler
+from models.EnhanceNet.model import EnhanceNet
 from models.SRResNet.model import SRResNet
 
 if __name__ == '__main__':
@@ -49,6 +50,7 @@ if __name__ == '__main__':
     'DRRN': tuple([DRRN(c=(1 if args.y_only else 3)), DefaultHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
     'LapSRN': tuple([LapSRN(c=(1 if args.y_only else 3), scale=args.scale), LapSRNHandler, MultiScaledImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
     'MSLapSRN': tuple([MSLapSRN(c=(1 if args.y_only else 3), scale=args.scale), MSLapSRNHandler, MultiScaledImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
+    'EnhanceNet': tuple([EnhanceNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
     'SRResNet': tuple([SRResNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
   }
 

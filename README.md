@@ -16,7 +16,8 @@
 * [RED-Net (CVPR 2016)](./models/REDNet/) [[Paper]](https://arxiv.org/abs/1603.09056)
 * [DRRN (CVPR 2017)](./models/DRRN/) [[Paper]](https://ieeexplore.ieee.org/document/8099781)
 * [LapSRN (CVPR 2017)](./models/LapSRN/) [[Paper]](https://arxiv.org/abs/1704.03915), [MSLapSRN](./models/MSLapSRN/) [[Paper]](https://arxiv.org/abs/1710.01992)
-* [SRResNet (CVPR 2017)](./models/SRResNet/) [[Paper]](https://arxiv.org/abs/1609.04802)
+* [EnhanceNet (CVPR 2017)](./models/EnhanceNet/) [[Paper]](https://arxiv.org/abs/1612.07919)
+* [SRResNet (CVPR 2017)](./models/SRResNet/) [SRGAN (CVPR 2017)](./models/SRGAN/) [[Paper]](https://arxiv.org/abs/1609.04802)
 
 ## Usage
 

@@ -45,5 +45,5 @@ class SRGAN(nn.Module):
     )
 
   def forward(self, x):
-    assert x.size()[-2:] == self.size, f'Input image size must be is {self.size}'
+    assert x.size()[-2:] == self.size, f'Input image size must be is {self.size}, got {x.size()[-2:]}'
     return self.layers(x)

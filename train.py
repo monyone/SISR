@@ -29,13 +29,15 @@ from models.LapSRN.handler import LapSRNHandler
 from models.MSLapSRN.model import MSLapSRN
 from models.MSLapSRN.handler import MSLapSRNHandler
 from models.SRResNet.model import SRResNet
+from models.EnhanceNet.model import EnhanceNet, EnhanceNetDiscriminator
+from models.EnhanceNet.handler import EnhanceNetGeneratorHandler, EnhanceNetDiscriminatorHandler
 from models.SRGAN.model import SRGAN
 from models.SRGAN.handler import SRGANGeneratorHandler, SRGANDiscriminatorHandler
 
 # PREFERENCE
 crop = None
 train_path = './data/DIV2K/DIV2K_train_HR_Patches/*'
-# train_path = ['./data/T91/Patches/*.png']
+#train_path = ['./data/T91/Patches/*.png']
 validate_path = './data/SET5/*'
 
 if __name__ == '__main__':
@@ -44,6 +46,7 @@ if __name__ == '__main__':
   parser.add_argument('--generator', type=str, required=True, help="SISR generator model")
   parser.add_argument('--generator_state', type=str, help="SISR generator state")
   parser.add_argument('--discriminator', type=str, help="SISR discriminator model")
+  parser.add_argument('--discriminator_patch', type=int, default=128, help="SISR discriminator patch size")
   parser.add_argument('--scale', type=int, default=2, help="Upscaling scale factor")
   parser.add_argument('--batch', type=int, default=1, help="Batch size")
   parser.add_argument('--y_only', action='store_true', help="Train y color only")
@@ -60,11 +63,13 @@ if __name__ == '__main__':
     'DRRN': tuple([DRRN(c=(1 if args.y_only else 3)), DefaultHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), InterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'LapSRN': tuple([LapSRN(c=(1 if args.y_only else 3), scale=args.scale), LapSRNHandler, MultiScaledImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), MultiScaledImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'MSLapSRN': tuple([MSLapSRN(c=(1 if args.y_only else 3), scale=args.scale), MSLapSRNHandler, MultiScaledImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), MultiScaledImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'EnhanceNet': tuple([EnhanceNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'SRResNet': tuple([SRResNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
   }
 
   discriminator_models = {
-    'SRGAN': tuple([SRGAN((1 if args.y_only else 3), size=(128, 128)), SRGANGeneratorHandler, SRGANDiscriminatorHandler, 0.0001])
+    'EnhanceNet': tuple([EnhanceNetDiscriminator((1 if args.y_only else 3), size=tuple([args.discriminator_patch] * 2)), EnhanceNetGeneratorHandler, EnhanceNetDiscriminatorHandler, 0.0001]),
+    'SRGAN': tuple([SRGAN((1 if args.y_only else 3), size=(tuple([args.discriminator_patch] * 2))), SRGANGeneratorHandler, SRGANDiscriminatorHandler, 0.0001]),
   }
 
   generator_model, geneartor_handler_class, train_set, validation_set, generator_lr = generator_models[args.generator]
