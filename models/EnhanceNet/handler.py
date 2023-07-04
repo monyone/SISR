@@ -13,7 +13,7 @@ class VGGLoss(nn.Module):
   def __init__(self, layer: int):
     super().__init__()
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    self.vgg_net = nn.Sequential(*list(vgg19(weights=VGG19_Weights.IMAGENET1K_V1).features)[:layer]).to(device=device).eval()
+    self.vgg_net = nn.Sequential(*list(vgg19(weights=VGG19_Weights.IMAGENET1K_V1).features)[:layer + 1]).to(device=device).eval()
     for param in self.vgg_net.parameters(): param.requires_grad = False
     self.criterion = nn.MSELoss()
     self.normalize = Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -27,7 +27,7 @@ class TextureLoss(nn.Module):
   def __init__(self, layer: int):
     super().__init__()
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    self.vgg_net = nn.Sequential(*list(vgg19(weights=VGG19_Weights.IMAGENET1K_V1).features)[:layer]).to(device=device).eval()
+    self.vgg_net = nn.Sequential(*list(vgg19(weights=VGG19_Weights.IMAGENET1K_V1).features)[:layer + 1]).to(device=device).eval()
     for param in self.vgg_net.parameters(): param.requires_grad = False
     self.criterion = nn.MSELoss()
     self.normalize = Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
