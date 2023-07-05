@@ -8,6 +8,11 @@ from math import log10
 
 from ..handler import Handler
 
+def if_y_then_gray(tensor: torch.Tensor):
+  _, c, _, _ = tensor.size()
+  if c != 1: return tensor
+  return tensor.repeat_interleave(repeats=3, dim=1)
+
 class VGGLoss(nn.Module):
   def __init__(self):
     super().__init__()
@@ -19,6 +24,8 @@ class VGGLoss(nn.Module):
     self.register_buffer(name='vgg_std', tensor=torch.tensor([[[0.229]], [[0.224]], [[0.225]]], requires_grad=False))
 
   def forward(self, sr, target):
+    sr = if_y_then_gray(sr)
+    target = if_y_then_gray(target)
     sr = sr.sub(self.vgg_mean).div(self.vgg_std)
     target = target.sub(self.vgg_mean).div(self.vgg_std)
     return self.criterion(self.vgg_net(sr), self.vgg_net(target))

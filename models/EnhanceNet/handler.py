@@ -9,6 +9,11 @@ from math import log10
 
 from ..handler import Handler
 
+def if_y_then_gray(tensor: torch.Tensor):
+  _, c, _, _ = tensor.size()
+  if c != 1: return tensor
+  return tensor.repeat_interleave(repeats=3, dim=1)
+
 class VGGLoss(nn.Module):
   def __init__(self, layer: int):
     super().__init__()
@@ -19,8 +24,8 @@ class VGGLoss(nn.Module):
     self.normalize = Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
   def forward(self, sr, target):
-    sr = self.vgg_net(self.normalize(sr))
-    target = self.vgg_net(self.normalize(target))
+    sr = self.vgg_net(self.normalize(if_y_then_gray(sr)))
+    target = self.vgg_net(self.normalize(if_y_then_gray(target)))
     return self.criterion(sr, target)
 
 class TextureLoss(nn.Module):
@@ -44,8 +49,8 @@ class TextureLoss(nn.Module):
     return tensor.unfold(2, size=patch, step=patch).unfold(3, size=patch, step=patch).permute([0, 2, 3, 1, 4, 5]).reshape(-1, c, patch, patch)
 
   def forward(self, sr, target):
-    sr = TextureLoss.gram_matrix(TextureLoss.into_patch(self.vgg_net(self.normalize(sr)), 16))
-    target = TextureLoss.gram_matrix(TextureLoss.into_patch(self.vgg_net(self.normalize(target)), 16))
+    sr = TextureLoss.gram_matrix(TextureLoss.into_patch(self.vgg_net(self.normalize(if_y_then_gray(sr))), 16))
+    target = TextureLoss.gram_matrix(TextureLoss.into_patch(self.vgg_net(self.normalize(if_y_then_gray(target))), 16))
     return self.criterion(sr, target)
 
 class EnhanceNetGeneratorHandler(Handler):
