@@ -34,8 +34,8 @@ class LapSRN(nn.Module):
       nn.LeakyReLU(negative_slope=0.2, inplace=True)
     )
     # Feature Extraction
-    self.feature_extraction = nn.Sequential(
-      *[nn.Sequential(
+    self.feature_extraction = nn.ModuleList(
+      [nn.Sequential(
         *[nn.Sequential(
           nn.Conv2d(in_channels=n, out_channels=n, kernel_size=f, padding=f//2, bias=False),
           nn.LeakyReLU(negative_slope=0.2, inplace=True)
@@ -45,12 +45,12 @@ class LapSRN(nn.Module):
       ) for _ in range(iterations)]
     )
     # Output
-    self.feature_to_image = nn.Sequential(
-      *[nn.Conv2d(in_channels=n, out_channels=c, kernel_size=f, padding=f//2, bias=False) for _ in range(iterations)]
+    self.feature_to_image = nn.ModuleList(
+      [nn.Conv2d(in_channels=n, out_channels=c, kernel_size=f, padding=f//2, bias=False) for _ in range(iterations)]
     )
     # Upscaling Image
-    self.upscale_image = nn.Sequential(
-      *[nn.ConvTranspose2d(in_channels=c, out_channels=c, kernel_size=f, stride=2, padding=f//2, output_padding=1, bias=True) for _ in range(iterations)]
+    self.upscale_image = nn.ModuleList(
+      [nn.ConvTranspose2d(in_channels=c, out_channels=c, kernel_size=f, stride=2, padding=f//2, output_padding=1, bias=True) for _ in range(iterations)]
     )
 
     for m in self.modules():

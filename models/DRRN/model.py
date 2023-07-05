@@ -34,7 +34,7 @@ class DRRN(nn.Module):
       nn.ReLU(inplace=True)
     )
     # Residual Unit
-    self.redisual_units = nn.Sequential(*[
+    self.redisual_units = nn.ModuleList([
       nn.Sequential(
         nn.BatchNorm2d(num_features=n),
         nn.ReLU(inplace=True),
@@ -45,7 +45,7 @@ class DRRN(nn.Module):
       ) for _ in range(B)]
     )
     # Residual Block
-    self.residual_blocks = nn.Sequential(*[
+    self.residual_blocks = nn.ModuleList([
       nn.Sequential(
         nn.Conv2d(in_channels=n, out_channels=n, kernel_size=f, padding=f//2, bias=False),
         nn.ReLU(inplace=True),

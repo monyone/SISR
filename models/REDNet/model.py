@@ -29,11 +29,11 @@ class REDNet(nn.Module):
       nn.ReLU(inplace=True),
     )
     self.relu = nn.ReLU(inplace=True)
-    self.convolution = nn.Sequential(
-      *[nn.Conv2d(in_channels=n, out_channels=n, kernel_size=f, padding=f//2, bias=True) for _ in range(l)]
+    self.convolution = nn.ModuleList(
+      [nn.Conv2d(in_channels=n, out_channels=n, kernel_size=f, padding=f//2, bias=True) for _ in range(l)]
     )
-    self.deconvolution = nn.Sequential(
-      *[nn.ConvTranspose2d(in_channels=n, out_channels=n, kernel_size=f, padding=f//2, bias=True) for _ in range(l)]
+    self.deconvolution = nn.ModuleList(
+      [nn.ConvTranspose2d(in_channels=n, out_channels=n, kernel_size=f, padding=f//2, bias=True) for _ in range(l)]
     )
     self.output = nn.ConvTranspose2d(in_channels=n, out_channels=c, kernel_size=f, padding=f//2, bias=True)
 
