@@ -28,10 +28,9 @@ from models.LapSRN.model import LapSRN
 from models.LapSRN.handler import LapSRNHandler
 from models.MSLapSRN.model import MSLapSRN
 from models.MSLapSRN.handler import MSLapSRNHandler
-from models.SRResNet.model import SRResNet
 from models.EnhanceNet.model import EnhanceNet, EnhanceNetDiscriminator
 from models.EnhanceNet.handler import EnhanceNetGeneratorHandler, EnhanceNetDiscriminatorHandler
-from models.SRGAN.model import SRGAN
+from models.SRGAN.model import SRResNet, SRGAN
 from models.SRGAN.handler import SRGANGeneratorHandler, SRGANDiscriminatorHandler
 
 # PREFERENCE
