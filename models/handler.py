@@ -29,10 +29,11 @@ class Handler(ABC):
     pass
 
 class DefaultHandler(Handler):
-  def __init__(self, model: nn.Module):
+  def __init__(self, model: nn.Module, loss: nn.Module):
     super().__init__()
     self.model = model
-    self.criterion = nn.MSELoss()
+    self.criterion = loss
+    self.mse_loss = nn.MSELoss()
 
   def to(self, device: str) -> Handler:
     return self
@@ -44,8 +45,16 @@ class DefaultHandler(Handler):
   def statistics(self, input, target):
     with torch.no_grad():
       sr = self.model(input).clamp_(0, 1)
-      loss = cast(float, self.criterion(sr, target).item())
+      loss = cast(float, self.mse_loss(sr, target).item())
       return loss, 10 * log10(1 / loss) if loss != 0 else 100
 
   def test(self, input):
     return self.model(input).clamp_(0, 1)
+
+class DefaultMSEHandler(DefaultHandler):
+  def __init__(self, model: nn.Module):
+    super().__init__(model, nn.MSELoss())
+
+class DefaultMAEHandler(DefaultHandler):
+  def __init__(self, model: nn.Module):
+    super().__init__(model, nn.L1Loss())

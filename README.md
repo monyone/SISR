@@ -18,6 +18,7 @@
 * [LapSRN (CVPR 2017)](./models/LapSRN/) [[Paper]](https://arxiv.org/abs/1704.03915)
 * [EnhanceNet (CVPR 2017)](./models/EnhanceNet/) [[Paper]](https://arxiv.org/abs/1612.07919)
 * [SRResNet, SRGAN (CVPR 2017)](./models/SRGAN/) [[Paper]](https://arxiv.org/abs/1609.04802)
+* [EDSR (CVPRW2017)](./models/EDSR/) [[paper]](https://arxiv.org/abs/1707.02921)
 * [MSLapSRN (TPAMI 2018)](./models/MSLapSRN/) [[Paper]](https://arxiv.org/abs/1710.01992)
 
 ## Usage
