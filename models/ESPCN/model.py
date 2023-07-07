@@ -7,7 +7,7 @@ import torch.nn as nn
 Efficient Sub-Pixel Convolutional Neural Networks (ESPCN)
 
 Site:
-  "Real-Time Single Image and Video Super-Resolution Using an Efficient Sub-Pixel Convolutional Neural Network (2016)" (https://arxiv.org/abs/1609.05158v2)
+  "Real-Time Single Image and Video Super-Resolution Using an Efficient Sub-Pixel Convolutional Neural Network (2016)" (https://arxiv.org/abs/1609.05158)
 """
 
 class ESPCN(nn.Module):
