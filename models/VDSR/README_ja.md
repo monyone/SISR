@@ -15,6 +15,6 @@
 * 論文内では He の初期化 (MSRA)[^init] で畳み込みの初期化をしている
   * PyTorch だと `torch.nn.init.kaiming_normal_` で初期化すればいい
   * PyTorch のデフォルトの初期化だと収束しなかったので、残差接続のネットワークでは使ったほうが良い
-    * 自分の実装では fan_out で gain=2 相当の初期化をしている
+    * 自分の実装では fan_out 相当の初期化をしている
 
 [^init]: [CVMLエキスパートガイド: 重み初期化 (weight initialization): Xavier初期化とHe初期化](https://cvml-expertguide.net/terms/dl/optimization/weight-initialization/)

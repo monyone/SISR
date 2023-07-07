@@ -23,4 +23,4 @@
 * 論文内では [Image Style Transfer (CVPR 2016)](https://ieeexplore.ieee.org/document/7780634) に基づいて、mean activation した vgg19 の特徴マップを用いる
   * 要するに vgg19 の 畳み込み層 の特徴マップの平均が 1 になるように 畳み込み層 の重みを変更する
   * 特徴マップの平均を 1 に正規化する際に、全体の動作に影響しないよう vgg の MaxPool を AvgPool に変更する
-  * mean activation するコードは[こちら](../../data/generate_normalized_vgg19.py)
+  * [mean activation するコード](../../data/generate_normalized_vgg19.py)
