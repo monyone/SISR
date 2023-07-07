@@ -33,11 +33,13 @@ from models.EnhanceNet.handler import EnhanceNetGeneratorHandler, EnhanceNetDisc
 from models.SRGAN.model import SRResNet, SRGAN
 from models.SRGAN.handler import SRGANGeneratorHandler, SRGANDiscriminatorHandler
 from models.EDSR.model import EDSR
+from models.TSRN.model import TSRN
+from models.TSRN.handler import TSRNHandler
 
 # PREFERENCE
 crop = None
-train_path = './data/DIV2K/DIV2K_train_HR_Patches/*'
-#train_path = ['./data/T91/Patches/*.png']
+#train_path = './data/DIV2K/DIV2K_train_HR_Patches/*'
+train_path = ['./data/T91/Patches/*.png']
 validate_path = './data/SET5/*'
 
 if __name__ == '__main__':
@@ -66,6 +68,7 @@ if __name__ == '__main__':
     'EnhanceNet': tuple([EnhanceNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'SRResNet': tuple([SRResNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'EDSR': tuple([EDSR(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'TSRN': tuple([TSRN(c=(1 if args.y_only else 3), scale=args.scale), TSRNHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
   }
 
   discriminator_models = {

@@ -31,7 +31,7 @@ class UpscaleBlock(nn.Module):
   def __init__(self, scale: int, f: int = 3, n: int = 64) -> None:
     super().__init__()
     self.block = nn.Sequential(
-      nn.Conv2d(n, (scale ** 2) * n, kernel_size=f, padding=1, bias=True),
+      nn.Conv2d(n, (scale ** 2) * n, kernel_size=f, padding=f//2, bias=True),
       nn.PixelShuffle(scale),
       nn.PReLU(n)
     )

@@ -20,6 +20,7 @@
 * [EDSR (CVPR Workshop 2017)](./models/EDSR/) [[paper]](https://arxiv.org/abs/1707.02921)
 * [EnhanceNet (ICCV 2017)](./models/EnhanceNet/) [[Paper]](https://arxiv.org/abs/1612.07919)
 * [MSLapSRN (TPAMI 2018)](./models/MSLapSRN/) [[Paper]](https://arxiv.org/abs/1710.01992)
+* [TSRN (ECCV 2018)](./models/TSRN/) [[Paper]](https://arxiv.org/abs/1808.00043)
 
 ## Usage
 
