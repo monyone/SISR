@@ -8,9 +8,14 @@
 
 ## 補足
 
+### Perceptual Loss について
+
+* この論文では VGG19 の Conv5_4 を取っている
+  * relu 層を通った後の post activation を利用
+
 ### Adversarial Loss について
 
-* この論文では Adversarial Loss に 0.001 の係数を掛けている
+* この論文では Adversarial Loss に 0.001 の係数を掛けている (Perceptual Loss は 1)
   * (こんな少なくていいのか疑問がある...ここらへんよくわからん...)
 
 
