@@ -45,18 +45,18 @@ if __name__ == '__main__':
 
   models = {
     'SRCNN': tuple([SRCNN(c=(1 if args.y_only else 3)), DefaultMSEHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
-    'VDSR': tuple([VDSR(c=(1 if args.y_only else 3)), DefaultMSEHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
     'FSRCNN': tuple([FSRCNN(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
-    'DRCN': tuple([DRCN(c=(1 if args.y_only else 3)), DRCNHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
     'ESPCN': tuple([ESPCN(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
-    'RED-Net': tuple([REDNet(c=(1 if args.y_only else 3)), DefaultMSEHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
+    'VDSR': tuple([VDSR(c=(1 if args.y_only else 3)), DefaultMSEHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
+    'DRCN': tuple([DRCN(c=(1 if args.y_only else 3)), DRCNHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
     'DRRN': tuple([DRRN(c=(1 if args.y_only else 3)), DefaultMSEHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
+    'RED-Net': tuple([REDNet(c=(1 if args.y_only else 3)), DefaultMSEHandler, InterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
     'LapSRN': tuple([LapSRN(c=(1 if args.y_only else 3), scale=args.scale), LapSRNHandler, MultiScaledImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
     'MSLapSRN': tuple([MSLapSRN(c=(1 if args.y_only else 3), scale=args.scale), MSLapSRNHandler, MultiScaledImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
     'EnhanceNet': tuple([EnhanceNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
+    'TSRN': tuple([TSRN(c=(1 if args.y_only else 3), scale=args.scale), TSRNHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
     'SRResNet': tuple([SRResNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
     'EDSR': tuple([EDSR(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
-    'TSRN': tuple([TSRN(c=(1 if args.y_only else 3), scale=args.scale), TSRNHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
   }
 
   device: str = 'cuda' if cuda.is_available() else 'cpu'
