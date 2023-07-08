@@ -66,7 +66,7 @@ class TSRNHandler(Handler):
       return loss, 10 * log10(1 / loss) if loss != 0 else 100
 
   def step(self, epoch: int, epochs: int) -> None:
-    self.alpha = 1 if epoch <= 10 else 0
+    self.alpha = 1 if epoch < 10 else 0
 
   def test(self, input):
     return self.model(input).clamp_(0, 1)
