@@ -35,11 +35,13 @@ from models.SRGAN.handler import SRGANGeneratorHandler, SRGANDiscriminatorHandle
 from models.EDSR.model import EDSR
 from models.TSRN.model import TSRN
 from models.TSRN.handler import TSRNHandler
+from models.ESRGAN.model import ESRNet, ESRGAN
+from models.ESRGAN.handler import ESRGANGeneratorHandler, ESRGANDiscriminatorHandler
 
 # PREFERENCE
 crop = None
-#train_path = './data/DIV2K/DIV2K_train_HR_Patches/*'
-train_path = ['./data/T91/Patches/*.png']
+train_path = './data/DIV2K/DIV2K_train_HR_Patches/*'
+#train_path = ['./data/T91/Patches/*.png']
 validate_path = './data/SET5/*'
 
 if __name__ == '__main__':
@@ -69,11 +71,13 @@ if __name__ == '__main__':
     'TSRN': tuple([TSRN(c=(1 if args.y_only else 3), scale=args.scale), TSRNHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'SRResNet': tuple([SRResNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'EDSR': tuple([EDSR(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'ESRNet': tuple([ESRNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
   }
 
   discriminator_models = {
     'EnhanceNet': tuple([EnhanceNetDiscriminator((1 if args.y_only else 3), size=tuple([args.discriminator_patch] * 2)), EnhanceNetGeneratorHandler, EnhanceNetDiscriminatorHandler, 0.0001]),
     'SRGAN': tuple([SRGAN((1 if args.y_only else 3), size=(tuple([args.discriminator_patch] * 2))), SRGANGeneratorHandler, SRGANDiscriminatorHandler, 0.0001]),
+    'ESRGAN': tuple([ESRGAN((1 if args.y_only else 3), size=(tuple([args.discriminator_patch] * 2))), ESRGANGeneratorHandler, ESRGANDiscriminatorHandler, 0.0001]),
   }
 
   generator_model, geneartor_handler_class, train_set, validation_set, generator_lr = generator_models[args.generator]
