@@ -21,6 +21,7 @@
 * [EnhanceNet (ICCV 2017)](./models/EnhanceNet/) [[Paper]](https://arxiv.org/abs/1612.07919)
 * [MSLapSRN (TPAMI 2018)](./models/MSLapSRN/) [[Paper]](https://arxiv.org/abs/1710.01992)
 * [TSRN (ECCV 2018)](./models/TSRN/) [[Paper]](https://arxiv.org/abs/1808.00043)
+* [ESRNet, ESRGAN (ECCV 2018)](./models/ESRGAN/) [[Paper]](https://arxiv.org/abs/1809.00219)
 
 ## Usage
 
