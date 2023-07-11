@@ -8,9 +8,9 @@ from torch import cuda
 from torch.utils.data import DataLoader
 import torchvision.utils as utils
 
-from data.interpolated import InterpolatedImageDataset
-from data.noninterpolated import NonInterpolatedImageDataset
-from data.multiscaled import MultiScaledImageDataset
+from data.dataloader.interpolated import InterpolatedImageDataset
+from data.dataloader.noninterpolated import NonInterpolatedImageDataset
+from data.dataloader.multiscaled import MultiScaledImageDataset
 
 from models.handler import DefaultMSEHandler, DefaultMAEHandler
 from models.SRCNN.model import SRCNN
