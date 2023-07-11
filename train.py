@@ -37,6 +37,7 @@ from models.TSRN.model import TSRN
 from models.TSRN.handler import TSRNHandler
 from models.ESRGAN.model import ESRNet, ESRGAN
 from models.ESRGAN.handler import ESRGANGeneratorHandler, ESRGANDiscriminatorHandler
+from models.SRDenseNet.model import SRDenseNet
 
 # PREFERENCE
 crop = None
@@ -68,6 +69,7 @@ if __name__ == '__main__':
     'LapSRN': tuple([LapSRN(c=(1 if args.y_only else 3), scale=args.scale), LapSRNHandler, MultiScaledImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), MultiScaledImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'MSLapSRN': tuple([MSLapSRN(c=(1 if args.y_only else 3), scale=args.scale), MSLapSRNHandler, MultiScaledImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), MultiScaledImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'EnhanceNet': tuple([EnhanceNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'SRDenseNet': tuple([SRDenseNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'TSRN': tuple([TSRN(c=(1 if args.y_only else 3), scale=args.scale), TSRNHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'SRResNet': tuple([SRResNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'EDSR': tuple([EDSR(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),

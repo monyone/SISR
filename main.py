@@ -31,6 +31,7 @@ from models.EDSR.model import EDSR
 from models.TSRN.model import TSRN
 from models.TSRN.handler import TSRNHandler
 from models.ESRGAN.model import ESRNet
+from models.SRDenseNet.model import SRDenseNet
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='PyTorch SISR (Single Image Super Resolution)')
@@ -55,6 +56,7 @@ if __name__ == '__main__':
     'LapSRN': tuple([LapSRN(c=(1 if args.y_only else 3), scale=args.scale), LapSRNHandler, MultiScaledImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
     'MSLapSRN': tuple([MSLapSRN(c=(1 if args.y_only else 3), scale=args.scale), MSLapSRNHandler, MultiScaledImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
     'EnhanceNet': tuple([EnhanceNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
+    'SRDenseNet': tuple([SRDenseNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
     'TSRN': tuple([TSRN(c=(1 if args.y_only else 3), scale=args.scale), TSRNHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
     'SRResNet': tuple([SRResNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
     'EDSR': tuple([EDSR(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),

@@ -19,6 +19,7 @@
 * [SRResNet, SRGAN (CVPR Oral 2017)](./models/SRGAN/) [[Paper]](https://arxiv.org/abs/1609.04802)
 * [EDSR (CVPR Workshop 2017)](./models/EDSR/) [[paper]](https://arxiv.org/abs/1707.02921)
 * [EnhanceNet (ICCV 2017)](./models/EnhanceNet/) [[Paper]](https://arxiv.org/abs/1612.07919)
+* [SRDenseNet (ICCV 2017)](./models/SRDenseNet/) [[Paper]](https://ieeexplore.ieee.org/document/8237776)
 * [MSLapSRN (TPAMI 2018)](./models/MSLapSRN/) [[Paper]](https://arxiv.org/abs/1710.01992)
 * [TSRN (ECCV 2018)](./models/TSRN/) [[Paper]](https://arxiv.org/abs/1808.00043)
 * [ESRNet, ESRGAN (ECCV 2018)](./models/ESRGAN/) [[Paper]](https://arxiv.org/abs/1809.00219)
