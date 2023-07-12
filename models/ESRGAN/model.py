@@ -4,7 +4,7 @@ import torch.nn as nn
 
 from math import log, sqrt
 
-"""ESRNet/ESRGAN Model
+"""RRDBNet/ESRGAN Model
 
 Site:
   "ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks (2018)" (https://arxiv.org/abs/1809.00219)
@@ -57,9 +57,9 @@ class UpscaleBlock(nn.Module):
   def forward(self, x):
     return self.block(x)
 
-class ESRNet(nn.Module):
+class RRDBNet(nn.Module):
   def __init__(self, scale: int, c: int = 3, f = 3, n: int = 64, g: int = 32, d: int = 23, l: int = 3, b: int = 5) -> None:
-    """ESRNet's Constructor
+    """RRDBNet's Constructor
 
     Args:
       c (int): number of channel the input/output image.
@@ -70,7 +70,7 @@ class ESRNet(nn.Module):
       b (int): number of block in ResidualDenseBlock.
 
     Examples:
-      >>> ESRNet() # typical ESRNet parameters
+      >>> RRDBNet() # typical RRDBNet parameters
     """
     super().__init__()
     # Input Layer

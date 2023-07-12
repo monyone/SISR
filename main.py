@@ -30,7 +30,7 @@ from models.SRGAN.model import SRResNet
 from models.EDSR.model import EDSR
 from models.TSRN.model import TSRN
 from models.TSRN.handler import TSRNHandler
-from models.ESRGAN.model import ESRNet
+from models.ESRGAN.model import RRDBNet
 from models.SRDenseNet.model import SRDenseNet
 
 if __name__ == '__main__':
@@ -40,8 +40,8 @@ if __name__ == '__main__':
   parser.add_argument('--crop', type=int, help="Crop size")
   parser.add_argument('--scale', type=int, default=1, help="Downscale factor")
   parser.add_argument('--state', type=Path, required=True, help="Trained state Path")
-  parser.add_argument('--y_only', action='store_true', help="Train y color only")
-  parser.add_argument('--dividable', action='store_true', help="Input Image adjust to downscale factor")
+  parser.add_argument('--y_only', action='store_true', help="inference Y color only")
+  parser.add_argument('--dividable', action='store_true', help="adjust to downscale factor")
 
   args = parser.parse_args()
 
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     'TSRN': tuple([TSRN(c=(1 if args.y_only else 3), scale=args.scale), TSRNHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
     'SRResNet': tuple([SRResNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
     'EDSR': tuple([EDSR(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
-    'ESRNet': tuple([ESRNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
+    'RRDBNet': tuple([RRDBNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, y_only=args.y_only, dividable=args.dividable)]),
   }
 
   device: str = 'cuda' if cuda.is_available() else 'cpu'
@@ -78,7 +78,7 @@ if __name__ == '__main__':
       upscaled = handler.test(lowres)
       from math import log10
       print(10 * log10(1 / torch.nn.MSELoss()(upscaled, _.to(device)).data))
-      #utils.save_image(lowres, str(f'./{args.image.stem}_lr{args.image.suffix}'), nrow=1)
+      utils.save_image(lowres, str(f'./{args.image.stem}_lr{args.image.suffix}'), nrow=1)
       utils.save_image(_, str(f'./{args.image.stem}_hr{args.image.suffix}'), nrow=1)
       utils.save_image(torch.abs(upscaled - _.to(device)), str(f'./{args.image.stem}_sr_ud{args.image.suffix}'), nrow=1)
       #utils.save_image(torch.abs(upscaled - lowres), str(f'./{args.image.stem}_sr_ld{args.image.suffix}'), nrow=1)

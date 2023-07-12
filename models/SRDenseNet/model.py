@@ -54,7 +54,7 @@ class SRDenseNet(nn.Module):
       b (int): number of DenseLayer in DenseBlock.
 
     Examples:
-      >>> ESRNet() # typical ESRNet parameters
+      >>> SRDenseNet() # typical SRDenseNet parameters
     """
     super().__init__()
     # Input Layer

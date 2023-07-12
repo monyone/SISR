@@ -35,15 +35,15 @@ from models.SRGAN.handler import SRGANGeneratorHandler, SRGANDiscriminatorHandle
 from models.EDSR.model import EDSR
 from models.TSRN.model import TSRN
 from models.TSRN.handler import TSRNHandler
-from models.ESRGAN.model import ESRNet, ESRGAN
+from models.ESRGAN.model import RRDBNet, ESRGAN
 from models.ESRGAN.handler import ESRGANGeneratorHandler, ESRGANDiscriminatorHandler
 from models.SRDenseNet.model import SRDenseNet
 
 # PREFERENCE
 crop = None
-train_path = './data/DIV2K/DIV2K_train_HR_Patches/*'
-#train_path = ['./data/T91/Patches/*.png']
-validate_path = './data/SET5/*'
+train_path = './data/dataset/DIV2K/DIV2K_train_HR_Patches_128_128/*'
+#train_path = ['./data/dataset/T91/Patches/*.png']
+validate_path = './data/dataset/SET5/*'
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='PyTorch SISR (Single Image Super Resolution)')
@@ -54,26 +54,27 @@ if __name__ == '__main__':
   parser.add_argument('--discriminator_patch', type=int, default=128, help="SISR discriminator patch size")
   parser.add_argument('--scale', type=int, default=2, help="Upscaling scale factor")
   parser.add_argument('--batch', type=int, default=1, help="Batch size")
+  parser.add_argument('--distort', action='store_true', help="Train with probabilistic image distortion")
   parser.add_argument('--y_only', action='store_true', help="Train y color only")
 
   args = parser.parse_args()
 
   generator_models = {
-    'SRCNN': tuple([SRCNN(c=(1 if args.y_only else 3)), DefaultMSEHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), InterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
-    'FSRCNN': tuple([FSRCNN(scale=args.scale, c=(1 if args.y_only else 3)), DefaultMSEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
-    'ESPCN': tuple([ESPCN(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
-    'VDSR': tuple([VDSR(c=(1 if args.y_only else 3)), DefaultMSEHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), InterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
-    'DRCN': tuple([DRCN(c=(1 if args.y_only else 3)), DRCNHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), InterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
-    'DRRN': tuple([DRRN(c=(1 if args.y_only else 3)), DefaultMSEHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), InterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
-    'RED-Net': tuple([REDNet(c=(1 if args.y_only else 3)), DefaultMSEHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), InterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
-    'LapSRN': tuple([LapSRN(c=(1 if args.y_only else 3), scale=args.scale), LapSRNHandler, MultiScaledImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), MultiScaledImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
-    'MSLapSRN': tuple([MSLapSRN(c=(1 if args.y_only else 3), scale=args.scale), MSLapSRNHandler, MultiScaledImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), MultiScaledImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
-    'EnhanceNet': tuple([EnhanceNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
-    'SRDenseNet': tuple([SRDenseNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
-    'TSRN': tuple([TSRN(c=(1 if args.y_only else 3), scale=args.scale), TSRNHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
-    'SRResNet': tuple([SRResNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
-    'EDSR': tuple([EDSR(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
-    'ESRNet': tuple([ESRNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'SRCNN': tuple([SRCNN(c=(1 if args.y_only else 3)), DefaultMSEHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), InterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'FSRCNN': tuple([FSRCNN(scale=args.scale, c=(1 if args.y_only else 3)), DefaultMSEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'ESPCN': tuple([ESPCN(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'VDSR': tuple([VDSR(c=(1 if args.y_only else 3)), DefaultMSEHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), InterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'DRCN': tuple([DRCN(c=(1 if args.y_only else 3)), DRCNHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), InterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'DRRN': tuple([DRRN(c=(1 if args.y_only else 3)), DefaultMSEHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), InterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'RED-Net': tuple([REDNet(c=(1 if args.y_only else 3)), DefaultMSEHandler, InterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), InterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'LapSRN': tuple([LapSRN(c=(1 if args.y_only else 3), scale=args.scale), LapSRNHandler, MultiScaledImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), MultiScaledImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'MSLapSRN': tuple([MSLapSRN(c=(1 if args.y_only else 3), scale=args.scale), MSLapSRNHandler, MultiScaledImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), MultiScaledImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'EnhanceNet': tuple([EnhanceNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'SRDenseNet': tuple([SRDenseNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'TSRN': tuple([TSRN(c=(1 if args.y_only else 3), scale=args.scale), TSRNHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'SRResNet': tuple([SRResNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'EDSR': tuple([EDSR(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'RRDBNet': tuple([RRDBNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
   }
 
   discriminator_models = {
