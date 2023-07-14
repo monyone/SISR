@@ -2,8 +2,8 @@
 
 ## 今北産業
 
-* [SRGAN](../SRGAN/) を拡張した論文
-* Redisual In Residual Dense Block を取り入れて MSE ベースでも性能が向上した
+* [SRGAN](../SRGAN/) のアーキテクチャをベースとして拡張を提案
+* [RDN](../RDN/) の Redisual Dense Net に更に Redisual を入れた Residuan In Residual Dense Block を提案
 * GAN を RaGAN (Relativistic Average GAN) に変更することで学習が安定した
 
 ## 補足

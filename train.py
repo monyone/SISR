@@ -38,6 +38,7 @@ from models.TSRN.handler import TSRNHandler
 from models.ESRGAN.model import RRDBNet, ESRGAN
 from models.ESRGAN.handler import ESRGANGeneratorHandler, ESRGANDiscriminatorHandler
 from models.SRDenseNet.model import SRDenseNet
+from models.RDN.model import RDN
 
 # PREFERENCE
 crop = None
@@ -74,6 +75,7 @@ if __name__ == '__main__':
     'TSRN': tuple([TSRN(c=(1 if args.y_only else 3), scale=args.scale), TSRNHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'SRResNet': tuple([SRResNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'EDSR': tuple([EDSR(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'RDN': tuple([RDN(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'RRDBNet': tuple([RRDBNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
   }
 

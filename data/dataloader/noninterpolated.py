@@ -28,8 +28,6 @@ class NonInterpolatedImageDataset(Dataset):
     hires = io.read_image(path, mode=io.ImageReadMode.RGB) / 255
     if tuple(map(lambda n: n // self.scale * self.scale, hires.size()[1:3])) != tuple(hires.size()[1:3]) and self.dividable:
       hires = F.resize(img=hires, antialias=True, size=(tuple(map(lambda n: n // self.scale * self.scale, hires.size()[1:3]))), interpolation=self.interpolation)
-    if self.y_only:
-      hires = torch.unsqueeze(input=((16 + (64.738 * hires[0, :, :] + 129.057 * hires[1, :, :] + 25.064 * hires[2, :, :])) / 255), dim=0)
     if self.crop is not None: hires = T.RandomCrop(self.crop)(hires)
     lowres = F.resize(img=hires, antialias=True, size=(tuple(map(lambda n: n // self.scale, hires.size()[1:3]))), interpolation=self.interpolation)
 

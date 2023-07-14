@@ -33,7 +33,6 @@ class UpscaleBlock(nn.Module):
     self.block = nn.Sequential(
       nn.Conv2d(n, (scale ** 2) * n, kernel_size=f, padding=f//2, bias=True),
       nn.PixelShuffle(scale),
-      nn.PReLU(n)
     )
 
   def forward(self, x):
