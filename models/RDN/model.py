@@ -47,6 +47,7 @@ class RDN(nn.Module):
     """RDN's Constructor
 
     Args:
+      scale (int): number of scaling factor.
       c (int): number of channel the input/output image.
       f (int): spatial size of region
       n (int): number of feature map.

@@ -44,6 +44,7 @@ class SRResNet(nn.Module):
     """SRResNet's Constructor
 
     Args:
+      scale (int): number of scaling factor.
       c (int): number of channel the input/output image.
       f1 (int): spatial size of input/output region.
       f2 (int): spatial size of residual region.
