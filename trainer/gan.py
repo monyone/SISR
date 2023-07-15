@@ -34,7 +34,6 @@ class GANTrainer:
     self.d_model.train()
     self.g_model.train()
     epoch_loss, epoch_psnr = 0, 0
-    val, content, adv = 0, 0, 0
     for batch in self.train_loader:
       highres, lowres = batch
       highres = tuple(map(lambda n: n.to(self.device), highres)) if type(highres) is list else highres.to(self.device)
