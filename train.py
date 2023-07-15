@@ -58,7 +58,7 @@ if __name__ == '__main__':
   parser.add_argument('--discriminator_patch', type=int, default=128, help="SISR discriminator patch size")
   parser.add_argument('--scale', type=int, default=2, help="Upscaling scale factor")
   parser.add_argument('--batch', type=int, default=1, help="Batch size")
-  parser.add_argument('--distort', action='store_true', help="Train with probabilistic image distortion")
+  parser.add_argument('--distort', type=str, help="image distortion method")
   parser.add_argument('--y_only', action='store_true', help="Train y color only")
 
   args = parser.parse_args()

@@ -4,14 +4,27 @@ import torchvision.io as io
 import torchvision.transforms.functional as F
 import torchvision.transforms as T
 
-import random
 from math import log
 from glob import glob
 
 from typing import Any
 
+from ..degradation.real_esrgan import degradation_real_esrgan
+from ..degradation.bsrgan import degradation_bsrgan
+from ..degradation.jpeg import degradation_jpeg
+
+def _degrade(image: torch.Tensor, scale_factor: int, interpolation: T.InterpolationMode, distort: str | None = None):
+  if distort == 'Real-ESRGAN':
+    return degradation_real_esrgan(image=image, scale_factor=scale_factor)
+  elif distort == 'BSRGAN':
+    return degradation_bsrgan(image=image, scale_factor=scale_factor)
+  elif distort == 'JPEG':
+    return degradation_jpeg(image=image, scale_factor=scale_factor, interpolation=interpolation)
+  else:
+    return F.resize(img=image, antialias=True, size=(tuple(map(lambda n: n // scale_factor, image.size()[1:3]))), interpolation=interpolation)
+
 class MultiScaledImageDataset(Dataset):
-  def __init__(self, path: str or list[str], crop: int | None = None, scale: int = 2, interpolation: T.InterpolationMode = T.InterpolationMode.BICUBIC, distort: bool = False, y_only: bool = False, dividable = False) -> None:
+  def __init__(self, path: str or list[str], crop: int | None = None, scale: int = 2, interpolation: T.InterpolationMode = T.InterpolationMode.BICUBIC, distort: str | None = None, y_only: bool = False, dividable = False) -> None:
     super().__init__()
     self.paths = sum(map(list, map(glob, path if type(path) is list else [path])), [])
     self.crop = crop
@@ -30,10 +43,8 @@ class MultiScaledImageDataset(Dataset):
     if tuple(map(lambda n: n // self.scale * self.scale, hires.size()[1:3])) != tuple(hires.size()[1:3]) and self.dividable:
       hires = F.resize(img=hires, antialias=True, size=(tuple(map(lambda n: n // self.scale * self.scale, hires.size()[1:3]))), interpolation=self.interpolation)
     if self.crop is not None: hires = T.RandomCrop(self.crop)(hires)
-    lowres = [F.resize(img=hires, antialias=True, size=(tuple(map(lambda n: n // (2 ** (idx + 1)), hires.size()[1:3]))), interpolation=self.interpolation) for idx in range(int(log(self.scale, 2)))]
 
-    if self.distort and random.random() < 0.25:
-      lowres = io.decode_jpeg(io.encode_jpeg((lowres * 255).clamp_(0, 255).to(torch.uint8), quality=random.randrange(70, 95)), io.ImageReadMode.RGB) / 255
+    lowres = [_degrade(hires, scale_factor=(2 ** (idx + 1)), interpolation=self.interpolation, distort=self.distort) for idx in range(int(log(self.scale, 2)))]
 
     if self.y_only:
       hires = torch.unsqueeze(input=((16 + (64.738 * hires[0, :, :] + 129.057 * hires[1, :, :] + 25.064 * hires[2, :, :])) / 255), dim=0)
