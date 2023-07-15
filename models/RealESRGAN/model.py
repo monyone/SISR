@@ -129,13 +129,13 @@ class RealESRGAN(nn.Module):
     self.input = nn.Conv2d(in_channels=c, out_channels=n, kernel_size=f, padding=f//2, bias=False)
     self.down_blocks = nn.ModuleList([
       nn.Sequential(
-        nn.utils.spectral_norm(nn.Conv2d(in_channels=(n * (2 ** index)), out_channels=(n * (2 ** (index + 1))), kernel_size=4, padding=4//2, stride=2)),
+        nn.utils.spectral_norm(nn.Conv2d(in_channels=(n * (2 ** index)), out_channels=(n * (2 ** (index + 1))), kernel_size=4, padding=1, stride=2, bias=False)),
         nn.LeakyReLU(negative_slope=0.2, inplace=True)
       ) for index in range(d)
     ])
     self.up_blocks = nn.ModuleList([
       nn.Sequential(
-        nn.utils.spectral_norm(nn.Conv2d(in_channels=(n * (2 ** (d - index))), out_channels=(n * (2 ** (d - (index + 1)))), kernel_size=f, padding=f//2)),
+        nn.utils.spectral_norm(nn.Conv2d(in_channels=(n * (2 ** (d - index))), out_channels=(n * (2 ** (d - (index + 1)))), kernel_size=f, padding=f//2, bias=False)),
         nn.LeakyReLU(negative_slope=0.2, inplace=True)
       ) for index in range(d)
     ])

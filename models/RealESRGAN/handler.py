@@ -42,7 +42,11 @@ class RealESRGANGeneratorHandler(Handler):
     self.content_loss_34 = VGGLoss(34)
 
   def to(self, device: str) -> Handler:
-    self.content_loss.to(device=device)
+    self.content_loss_2.to(device)
+    self.content_loss_7.to(device)
+    self.content_loss_16.to(device)
+    self.content_loss_25.to(device)
+    self.content_loss_34.to(device)
     return self
 
   def train(self, input, target):
@@ -51,7 +55,7 @@ class RealESRGANGeneratorHandler(Handler):
     else:
       sr = self.model(input)
 
-    content_loss = 0.1 * (self.content_loss_2(sr, target) + self.content_loss_7(sr, target)) + 1.0 * (self.content_loss_16 + self.content_loss_25 + self.content_loss_34)
+    content_loss = 0.1 * (self.content_loss_2(sr, target) + self.content_loss_7(sr, target)) + 1.0 * (self.content_loss_16(sr, target) + self.content_loss_25(sr, target) + self.content_loss_34(sr, target))
 
     return sr, self.pixel_loss(sr, target) + content_loss
 
