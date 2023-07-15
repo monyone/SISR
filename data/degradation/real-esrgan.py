@@ -1,0 +1,749 @@
+import torch
+import torchvision
+
+import math
+import random
+import statistics
+
+def _cubic(x: torch.Tensor) -> torch.Tensor:
+  """Python implements `cubic()` in Matlab
+
+  Args:
+    x (torch.Tensor): pixel value
+
+  Returns:
+    cubic (torch.Tensor): bicubic core
+
+  """
+  abs_x = torch.abs(x)
+  abs_x2 = abs_x ** 2
+  abs_x3 = abs_x ** 3
+  cubic1 = (1.5 * abs_x3 - 2.5 * abs_x2 + 1) * ((abs_x <= 1).type_as(abs_x))
+  cubic2 = (-0.5 * abs_x3 + 2.5 * abs_x2 - 4 * abs_x + 2) * (((abs_x > 1) * (abs_x <= 2)).type_as(abs_x))
+  cubic = cubic1 + cubic2
+  return cubic
+
+def _mesh_grid(kernel_size: int) -> torch.Tensor:
+  """Make N-D coordinate arrays for vectorized evaluations of N-D scalar/vector fields
+  over N-D grids, given one-dimensional coordinate arrays x1, x2,..., xn.
+
+  Args:
+    kernel_size (int): Gaussian kernel size
+
+  Returns:
+    xy (torch.Tensor): Gaussian kernel with this scale -> (kernel_size, kernel_size, 2)
+
+  """
+
+  a = torch.arange(-kernel_size // 2 + 1, kernel_size // 2 + 1, dtype=torch.float)
+  xx, yy = map(lambda grid: grid.reshape((kernel_size, kernel_size, 1)), torch.meshgrid([a, a], indexing='xy'))
+  return torch.cat((xx, yy), dim=-1)
+
+def _calculate_weights_indices(in_length: int, out_length: int, scale: float, kernel_width: int, antialiasing: bool) -> tuple[torch.Tensor, torch.Tensor, int, int]:
+  """Implementation of `calculate_weights_indices()` in Matlab under Python language.
+
+  Args:
+    in_length (int): Input length.
+    out_length (int): Output length.
+    scale (float): Scale factor.
+    kernel_width (int): Kernel width.
+    antialiasing (bool): Whether to apply antialiasing when down-sampling operations.
+      Caution: Bicubic down-sampling in PIL uses antialiasing by default.
+
+    Returns:
+
+    """
+
+  if (scale < 1) and antialiasing:
+    # Use a modified kernel (larger kernel width) to simultaneously interpolate and antialiasing
+    kernel_width = kernel_width / scale
+
+  # Output-space coordinates
+  x = torch.linspace(1, out_length, out_length)
+
+  # Input-space coordinates. Calculate the inverse mapping such that 0.5 in output space maps to 0.5 in input space,
+  # and 0.5 + scale in output space maps to 1.5 in input space.
+  u = x / scale + 0.5 * (1 - 1 / scale)
+
+  # What is the left-most pixel that can be involved in the computation?
+  left = torch.floor(u - kernel_width / 2)
+
+  # What is the maximum number of pixels that can be involved in the
+  # computation?  Note: it's OK to use an extra pixel here; if the
+  # corresponding weights are all zero, it will be eliminated at the end
+  # of this function.
+  p = math.ceil(kernel_width) + 2
+
+  # The indices of the input pixels involved in computing the k-th output pixel are in row k of the indices matrix.
+  indices = left.view(out_length, 1).expand(out_length, p) + torch.linspace(0, p - 1, p).view(1, p).expand(out_length, p)
+
+  # The weights used to compute the k-th output pixel are in row k of the weights matrix.
+  distance_to_center = u.view(out_length, 1).expand(out_length, p) - indices
+
+  # apply cubic kernel
+  if (scale < 1) and antialiasing:
+    weights = scale * _cubic(distance_to_center * scale)
+  else:
+    weights = _cubic(distance_to_center)
+
+    # Normalize the weights matrix so that each row sums to 1.
+    weights_sum = torch.sum(weights, 1).view(out_length, 1)
+    weights = weights / weights_sum.expand(out_length, p)
+
+  # If a column in weights is all zero, get rid of it. only consider the first and last column.
+  weights_zero_tmp = torch.sum((weights == 0), 0)
+  if not math.isclose(weights_zero_tmp[0], 0, rel_tol=1e-6):
+    indices = indices.narrow(1, 1, p - 2)
+    weights = weights.narrow(1, 1, p - 2)
+  if not math.isclose(weights_zero_tmp[-1], 0, rel_tol=1e-6):
+    indices = indices.narrow(1, 0, p - 2)
+    weights = weights.narrow(1, 0, p - 2)
+  weights = weights.contiguous()
+  indices = indices.contiguous()
+  sym_len_s = -indices.min() + 1
+  sym_len_e = indices.max() - in_length
+  indices = indices + sym_len_s - 1
+
+  return weights, indices, int(sym_len_s), int(sym_len_e)
+
+def _calculate_rotate_sigma_matrix(sigma_x: float, sigma_y: float, theta: float) -> torch.Tensor:
+  """Calculate rotated sigma matrix
+
+  Args:
+    sigma_x (float): Sigma value in the horizontal axis direction
+    sigma_y (float): sigma value along the vertical axis
+    theta (float): Radian measurement
+
+  Returns:
+    out (torch.Tensor): Rotated sigma matrix
+
+  """
+
+  sigma = torch.Tensor([[sigma_x ** 2, 0], [0, sigma_y ** 2]])
+  rot = torch.Tensor([[math.cos(theta), -math.sin(theta)], [math.sin(theta), math.cos(theta)]])
+  return rot @ (sigma @ rot.T)
+
+def _calculate_probability_density(sigma_matrix: torch.Tensor, grid: torch.Tensor) -> torch.Tensor:
+  """Calculate probability density function of the bivariate Gaussian distribution
+
+  Args:
+    sigma_matrix (torch.Tensor): with the shape (2, 2)
+    grid (torch.Tensor): generated by :func:`mesh_grid`, with the shape (K, K, 2), K is the kernel size
+
+  Returns:
+    probability_density (torch.Tensor): un-normalized kernel
+
+  """
+
+  inverse_sigma_matrix: torch.Tensor = torch.linalg.inv(sigma_matrix)
+  return torch.exp(-0.5 * torch.sum(grid @ inverse_sigma_matrix * grid, dim=2))
+
+def _generate_bivariate_gaussian_kernel(kernel_size: int, sigma_x: float, sigma_y: float, theta: float, grid: torch.Tensor = None, isotropic: bool = True) -> torch.Tensor:
+  """Generate a bivariate isotropic or anisotropic Gaussian kernel
+
+  Args:
+    kernel_size (int): Gaussian kernel size
+    sigma_x (float): Sigma value in the horizontal axis direction
+    sigma_y (float): sigma value along the vertical axis
+    theta (float): Radian measurement
+    grid (optional, torch.Tensor): generated by :func:`mesh_grid`, with the shape (K, K, 2), K is the kernel size. Default: ``None``
+    isotropic (optional, bool): Set to `True` for homosexual Gaussian kernel, set to `False` for heterosexual Gaussian kernel. Default: ``True``
+
+  Returns:
+    bivariate_gaussian_kernel (torch.Tensor): Bivariate gaussian kernel
+
+  """
+  grid = grid if grid is not None else _mesh_grid(kernel_size)
+  sigma_matrix = _calculate_rotate_sigma_matrix(sigma_x, sigma_y, theta) if not isotropic else torch.Tensor([[sigma_x ** 2, 0], [0, sigma_x ** 2]])
+  bivariate_gaussian_kernel = _calculate_probability_density(sigma_matrix, grid)
+  return bivariate_gaussian_kernel / torch.sum(bivariate_gaussian_kernel)
+
+def _generate_bivariate_generalized_gaussian_kernel(kernel_size: int, sigma_x: float, sigma_y: float, theta: float, beta: float, grid: torch.Tensor = None, isotropic: bool = True) -> torch.Tensor:
+  """Generate a bivariate generalized Gaussian kernel
+
+  Args:
+    kernel_size (int): Gaussian kernel size
+    sigma_x (float): Sigma value of the horizontal axis
+    sigma_y (float): Sigma value of the vertical axis
+    theta (float): Radian measurement
+    beta (float): shape parameter, beta = 1 is the normal distribution
+    grid (optional, torch.Tensor): generated by :func:`mesh_grid`, with the shape (K, K, 2), K is the kernel size. Default: None
+    isotropic (optional, bool): Set to `True` for homosexual Gaussian kernel, set to `False` for heterosexual Gaussian kernel. (Default: ``True``)
+
+  Returns:
+    bivariate_generalized_gaussian_kernel (torch.Tensor): bivariate generalized gaussian kernel
+
+  """
+  grid = grid if grid is not None else _mesh_grid(kernel_size)
+  sigma_matrix = _calculate_rotate_sigma_matrix(sigma_x, sigma_y, theta) if not isotropic else torch.Tensor([[sigma_x ** 2, 0], [0, sigma_x ** 2]])
+  inverse_sigma_matrix = torch.linalg.inv(sigma_matrix)
+  bivariate_generalized_gaussian_kernel = torch.exp(-0.5 * torch.pow(torch.sum(grid @ inverse_sigma_matrix * grid, dim=2), beta))
+  return bivariate_generalized_gaussian_kernel / torch.sum(bivariate_generalized_gaussian_kernel)
+
+def _generate_bivariate_plateau_gaussian_kernel(kernel_size: int, sigma_x: float, sigma_y: float, theta: float, beta: float, grid: torch.Tensor = None, isotropic: bool = True) -> torch.Tensor:
+  """Generate a plateau-like anisotropic kernel
+
+  Args:
+      kernel_size (int): Gaussian kernel size
+      sigma_x (float): Sigma value of the horizontal axis
+      sigma_y (float): Sigma value of the vertical axis
+      theta (float): Radian measurement
+      beta (float): shape parameter, beta = 1 is the normal distribution
+      grid (optional, ndarray): generated by :func:`mesh_grid`, with the shape (K, K, 2), K is the kernel size. Default: None
+      isotropic (optional, bool): Set to `True` for homosexual Gaussian kernel, set to `False` for heterosexual Gaussian kernel. (Default: ``True``)
+
+  Returns:
+      bivariate_plateau_gaussian_kernel (ndarray): bivariate plateau gaussian kernel
+
+  """
+  grid = grid if grid is not None else _mesh_grid(kernel_size)
+  sigma_matrix = _calculate_rotate_sigma_matrix(sigma_x, sigma_y, theta) if not isotropic else torch.Tensor([[sigma_x ** 2, 0], [0, sigma_x ** 2]])
+  inverse_sigma_matrix = torch.linalg.inv(sigma_matrix)
+  bivariate_plateau_gaussian_kernel = torch.reciprocal(torch.pow(torch.sum(grid @ inverse_sigma_matrix * grid, dim=2), beta) + 1)
+  return bivariate_plateau_gaussian_kernel / torch.sum(bivariate_plateau_gaussian_kernel)
+
+def _random_bivariate_gaussian_kernel(kernel_size: int, sigma_x_range: tuple[float, float], sigma_y_range: tuple[float, float], rotation_range: tuple[float, float], noise_range: tuple[float, float] = None, isotropic: bool = True) -> torch.Tensor:
+  """Randomly generate bivariate isotropic or anisotropic Gaussian kernels
+
+  Args:
+    kernel_size (int): Gaussian kernel size
+    sigma_x_range (tuple): Sigma range along the horizontal axis
+    sigma_y_range (tuple): Sigma range along the vertical axis
+    rotation_range (tuple): Gaussian kernel rotation matrix angle range value
+    noise_range(optional, tuple): multiplicative kernel noise. Default: None
+    isotropic (optional, bool): Set to `True` for homosexual plateau kernel, set to `False` for heterosexual plateau kernel. (Default: ``True``)
+
+  Returns:
+    bivariate_gaussian_kernel (torch.Tensor): Bivariate gaussian kernel
+
+  """
+
+  assert kernel_size % 2 == 1, "Kernel size must be an odd number."
+  sigma_x = random.uniform(min(sigma_x_range), max(sigma_x_range))
+  sigma_y = random.uniform(min(sigma_y_range), max(sigma_y_range)) if not isotropic else sigma_x
+  rotation = random.uniform(min(rotation_range), max(rotation_range)) if not isotropic else 0
+  bivariate_gaussian_kernel = _generate_bivariate_gaussian_kernel(kernel_size, sigma_x, sigma_y, rotation, isotropic=isotropic)
+  # add multiplicative noise
+  if noise_range is not None:
+    bivariate_gaussian_kernel *= ((max(noise_range) - min(noise_range)) * torch.rand_like(bivariate_gaussian_kernel) + min(noise_range))
+  return bivariate_gaussian_kernel / torch.sum(bivariate_gaussian_kernel)
+
+def _random_bivariate_generalized_gaussian_kernel(kernel_size: int, sigma_x_range: tuple[float, float], sigma_y_range: tuple[float, float], rotation_range: tuple[float, float], beta_range: tuple[float, float], noise_range: tuple[float, float] = None, isotropic: bool = True) -> torch.Tensor:
+  """Randomly generate bivariate generalized Gaussian kernels
+
+  Args:
+    kernel_size (int): Gaussian kernel size
+    sigma_x_range (tuple): Sigma range along the horizontal axis
+    sigma_y_range (tuple): Sigma range along the vertical axis
+    rotation_range (tuple): Gaussian kernel rotation matrix angle range value
+    beta_range (tuple): Gaussian kernel beta matrix angle range value
+    noise_range(optional, tuple): multiplicative kernel noise. Default: None
+    isotropic (optional, bool): Set to `True` for homosexual plateau kernel, set to `False` for heterosexual plateau kernel. (Default: ``True``)
+
+  Returns:
+    bivariate_generalized_gaussian_kernel (torch.Tensor): Bivariate generalized gaussian kernel
+
+  """
+  assert kernel_size % 2 == 1, "Kernel size must be an odd number."
+  sigma_x = random.uniform(min(sigma_x_range), max(sigma_x_range))
+  sigma_y = random.uniform(min(sigma_y_range), max(sigma_y_range)) if not isotropic else sigma_x
+  rotation = random.uniform(min(rotation_range), max(rotation_range)) if not isotropic else 0
+  beta = random.uniform(min(beta_range), 1) if random.random() < 0.5 else random.uniform(1, max(beta_range))
+  bivariate_generalized_gaussian_kernel = _generate_bivariate_generalized_gaussian_kernel(kernel_size, sigma_x, sigma_y, rotation, beta, isotropic=isotropic)
+
+  # add multiplicative noise
+  if noise_range is not None:
+    bivariate_generalized_gaussian_kernel *= ((max(noise_range) - min(noise_range)) * torch.rand_like(bivariate_generalized_gaussian_kernel) + min(noise_range))
+  return bivariate_generalized_gaussian_kernel / torch.sum(bivariate_generalized_gaussian_kernel)
+
+def _random_bivariate_plateau_gaussian_kernel(kernel_size: int, sigma_x_range: tuple[float, float], sigma_y_range: tuple[float, float], rotation_range: tuple[float, float], beta_range: tuple[float, float], noise_range: tuple[float, float] = None, isotropic: bool = True) -> torch.Tensor:
+  """Randomly generate bivariate plateau kernels
+
+  Args:
+    kernel_size (int): Gaussian kernel size
+    sigma_x_range (tuple): Sigma range along the horizontal axis
+    sigma_y_range (tuple): Sigma range along the vertical axis
+    rotation_range (tuple): Gaussian kernel rotation matrix angle range value
+    beta_range (tuple): Gaussian kernel beta matrix angle range value
+    noise_range(tuple, optional): multiplicative kernel noise. Default: None
+    isotropic (bool): Set to `True` for homosexual plateau kernel, set to `False` for heterosexual plateau kernel. (Default: ``True``)
+
+  Returns:
+    bivariate_plateau_gaussian_kernel (torch.Tensor): Bivariate plateau gaussian kernel
+
+  """
+
+  assert kernel_size % 2 == 1, "Kernel size must be an odd number."
+  sigma_x = random.uniform(min(sigma_x_range), max(sigma_x_range))
+  sigma_y = random.uniform(min(sigma_y_range), max(sigma_y_range)) if not isotropic else sigma_x
+  rotation = random.uniform(min(rotation_range), max(rotation_range)) if not isotropic else 0
+  beta = random.uniform(min(beta_range), 1) if random.random() < 0.5 else random.uniform(1, max(beta_range))
+  bivariate_plateau_gaussian_kernel = _generate_bivariate_plateau_gaussian_kernel(kernel_size, sigma_x, sigma_y, rotation, beta, isotropic=isotropic)
+  # add multiplicative noise
+  if noise_range is not None:
+    bivariate_plateau_gaussian_kernel *= ((max(noise_range) - min(noise_range)) * torch.rand_like(bivariate_plateau_gaussian_kernel) + min(noise_range))
+  return bivariate_plateau_gaussian_kernel / torch.sum(bivariate_plateau_gaussian_kernel)
+
+def random_mixed_kernels(kernel_type: list[str], kernel_prob: list[float], kernel_size: int, sigma_x_range: tuple[float, float], sigma_y_range: tuple[float, float], rotation_range: tuple[float, float], generalized_kernel_beta_range: tuple[float, float], plateau_kernel_beta_range: tuple[float, float], noise_range: tuple = None) -> torch.Tensor:
+  """Randomly generate mixed kernels
+
+  Args:
+    kernel_type (list[str]): a list name of gaussian kernel types
+    kernel_prob (list[float]): corresponding kernel probability for each kernel type
+    kernel_size (int): Gaussian kernel size
+    sigma_x_range (tuple): Sigma range along the horizontal axis
+    sigma_y_range (tuple): Sigma range along the vertical axis
+    rotation_range (tuple): Gaussian kernel rotation matrix angle range value
+    generalized_kernel_beta_range (tuple): Gaussian kernel beta matrix angle range value
+    plateau_kernel_beta_range (tuple): Plateau Gaussian Kernel Beta Matrix Angle Range Values
+    noise_range (optional, tuple): multiplicative kernel noise, [0.75, 1.25]. Default: ``None``
+
+  Returns:
+      mixed kernels (ndarray): Mixed kernels
+  """
+
+  kernel_type = random.choices(kernel_type, kernel_prob)[0]
+  if kernel_type == "isotropic":
+    mixed_kernels = _random_bivariate_gaussian_kernel(kernel_size, sigma_x_range, sigma_y_range, rotation_range, noise_range, True)
+  elif kernel_type == "anisotropic":
+    mixed_kernels = _random_bivariate_gaussian_kernel(kernel_size, sigma_x_range, sigma_y_range, rotation_range, noise_range, False)
+  elif kernel_type == "generalized_isotropic":
+    mixed_kernels = _random_bivariate_generalized_gaussian_kernel(kernel_size, sigma_x_range, sigma_y_range, rotation_range, generalized_kernel_beta_range, noise_range, True)
+  elif kernel_type == "generalized_anisotropic":
+    mixed_kernels = _random_bivariate_generalized_gaussian_kernel(kernel_size, sigma_x_range, sigma_y_range, rotation_range, generalized_kernel_beta_range, noise_range, False)
+  elif kernel_type == "plateau_isotropic":
+    mixed_kernels = _random_bivariate_plateau_gaussian_kernel(kernel_size, sigma_x_range, sigma_y_range, rotation_range, plateau_kernel_beta_range, None, True)
+  elif kernel_type == "plateau_anisotropic":
+    mixed_kernels = _random_bivariate_plateau_gaussian_kernel(kernel_size, sigma_x_range, sigma_y_range, rotation_range, plateau_kernel_beta_range, None, False)
+  else:
+    mixed_kernels = _random_bivariate_gaussian_kernel(kernel_size, sigma_x_range, sigma_y_range, rotation_range, noise_range, True)
+  return mixed_kernels
+
+def generate_sinc_kernel(cutoff: float, kernel_size: int, padding: int = 0) -> torch.Tensor:
+    """2D sinc filter
+
+    Args:
+        cutoff (float): Cutoff frequency in radians (pi is max)
+        kernel_size (int): Horizontal and vertical size, must be odd
+        padding (optional, int): Pad kernel size to desired size, must be odd or zero. Default: 0
+
+    Returns:
+        sinc_kernel (torch.Tensor): Sinc kernel
+
+    """
+
+    assert kernel_size % 2 == 1, "Kernel size must be an odd number."
+
+    sinc_kernel = torch.zeros((kernel_size, kernel_size))
+    for y in range(kernel_size):
+      for x in range(kernel_size):
+        cx = x - (kernel_size - 1) / 2
+        cy = y - (kernel_size - 1) / 2
+        sinc_kernel[y, x] = cutoff * torch.special.bessel_j1(torch.Tensor([(cutoff * math.sqrt(cx ** 2 + cy ** 2))])) / (2 * math.pi * math.sqrt(cx ** 2 + cy ** 2))
+    sinc_kernel[(kernel_size - 1) // 2, (kernel_size - 1) // 2] = (cutoff ** 2) / (4 * math.pi)
+    sinc_kernel = sinc_kernel / torch.sum(sinc_kernel)
+    if padding > kernel_size:
+      pad_size = (padding - kernel_size) // 2
+      sinc_kernel = torch.nn.functional.pad(sinc_kernel, (pad_size, pad_size, pad_size, pad_size), mode='constant', value=0)
+    return sinc_kernel
+
+def _generate_gaussian_noise(image: torch.Tensor, sigma: float | int = 10.0, gray_noise: float | int | bool = 0) -> torch.Tensor:
+    """Generate Gaussian noise (PyTorch)
+
+    Args:
+      image (Tensor): Input image
+      sigma (float): Noise scale (measured in range 255). Default: 10.0
+      gray_noise (optional, float): Whether to add grayscale noise. Default: 0
+
+    Returns:
+      gaussian_noise (Tensor): Gaussian noise
+    """
+
+    if type(gray_noise) == bool: gray_noise = 1 if gray_noise else 0
+
+    gray = torch.randn(image.shape[1:]) * sigma / 255
+    color = torch.randn(image.shape) * sigma / 255
+    return color * (1 - gray_noise) + gray * gray_noise
+
+def _generate_poisson_noise(image: torch.Tensor, scale: float | int = 1.0, gray_noise: float | int | bool = 0) -> torch.Tensor:
+  """Generate poisson noise (PyTorch)
+
+  Args:
+    image (Tensor): Input image
+    scale (optional, float): Noise scale value. Default: 1.0
+    gray_noise (optional, Tensor): Whether to add grayscale noise. Default: 0
+
+  Returns:
+    poisson_noise (Tensor): Poisson noise
+  """
+
+  if type(gray_noise) == bool: gray_noise = 1 if gray_noise else 0
+
+  gray_image = (torchvision.transforms.Grayscale()(image) * 255).clamp(0, 255).round() / 255
+  image = image.clamp(0, 255).round() / 255
+
+  gray_value: float = 2 ** math.ceil(math.log2(torch.unique((gray_image * 255).clamp(0, 255).round()).shape[0]))
+  gray = (gray_image - torch.poisson(gray_image * gray_value) / gray_value).repeat_interleave(3, dim=0)
+
+  color_value: float = 2 ** math.ceil(math.log2(torch.unique((image * 255).clamp(0, 255).round()).shape[0]))
+  color = image - torch.poisson(image * color_value) / color_value
+
+  return (color * (1 - gray_noise) + gray * gray_noise) * scale
+
+def _random_generate_gaussian_noise(image: torch.Tensor, sigma_range: tuple[float, float] = (0, 10), gray_prob: float | int = 0) -> torch.Tensor:
+  """Random generate gaussian noise (PyTorch)
+
+  Args:
+    image (Tensor): Input image
+    sigma_range (optional, tuple): Noise range. Default: (0, 10)
+    gray_prob (optional, float): Add grayscale noise probability. Default: 0
+
+  Returns:
+    gaussian_noise (Tensor): Gaussian noise
+  """
+
+  sigma = random.uniform(min(sigma_range), max(sigma_range))
+  gray_noise = random.random() < gray_prob
+  return _generate_gaussian_noise(image, sigma, gray_noise)
+
+def _random_generate_poisson_noise(image: torch.Tensor, scale_range: tuple[float, float] = (0, 1.0), gray_prob: float | int = 0) -> torch.Tensor:
+  """Random generate poisson noise (OpenCV)
+
+  Args:
+    image (torch.Tensor): Input image
+    scale_range (optional, tuple): Noise scale range. Default: (0, 1.0)
+    gray_prob (optional, float): Add grayscale noise probability. Default: 0
+
+  Returns:
+    poisson_noise (torch.Tensor): Poisson noise
+  """
+
+  scale = random.uniform(min(scale_range), max(scale_range))
+  gray_noise = random.random() < gray_prob
+  return _generate_poisson_noise(image, scale, gray_noise)
+
+def _add_gaussian_noise(image: torch.Tensor, sigma: float = 10.0, clip: bool = True, rounds: bool = False, gray_noise: int | float | bool = 0) -> torch.Tensor:
+    """Add gaussian noise to image (PyTorch)
+
+    Args:
+      image (Tensor): Input image
+      sigma (optional, float): Noise scale (measured in range 255). Default: 10.0
+      clip (optional, bool): Whether to clip image pixel. If `True`, clip image pixel to [0, 1] or [0, 255]. Default: ``True``
+      rounds (optional, bool): Gaussian noise rounds scale. Default: ``False``
+      gray_noise (optional, float): Whether to add grayscale noise. Default: 0
+
+    Returns:
+      out (Tensor): Add gaussian noise to image
+    """
+
+    noise = _generate_gaussian_noise(image, sigma, gray_noise)
+    out = image + noise
+
+    if clip and rounds:
+      out = torch.clamp((out * 255.0).round(), 0, 255) / 255.
+    elif clip:
+      out = torch.clamp(out, 0, 1)
+    elif rounds:
+      out = (out * 255.0).round() / 255.
+
+    return out
+
+def _add_poisson_noise(image: torch.Tensor, scale: float = 1.0, clip: bool = True, rounds: bool = False, gray_noise: int | float | bool = 0) -> torch.Tensor:
+  """Add poisson noise to image (PyTorch)
+
+  Args:
+    image (Tensor): Input image
+    scale (optional, float): Noise scale value. Default: 1.0
+    clip (optional, bool): Whether to clip image pixel. If `True`, clip image pixel to [0, 1] or [0, 255]. Default: ``True``
+    rounds (optional, bool): Gaussian noise rounds scale. Default: ``False``
+    gray_noise (optional, float): Whether to add grayscale noise. Default: 0
+
+  Returns:
+    out (Tensor): Add poisson noise to image
+  """
+
+  noise = _generate_poisson_noise(image, scale, gray_noise)
+  out = image + noise
+
+  if clip and rounds:
+    out = torch.clamp((out * 255.0).round(), 0, 255) / 255.
+  elif clip:
+    out = torch.clamp(out, 0, 1)
+  elif rounds:
+    out = (out * 255.0).round() / 255.
+
+  return out
+
+def random_add_gaussian_noise(image: torch.Tensor, sigma_range: tuple[float, float] = (0, 1.0), gray_prob: float | int = 0, clip: bool = True, rounds: bool = False) -> torch.Tensor:
+  """Random add gaussian noise to image (PyTorch)
+
+  Args:
+    image (Tensor): Input image
+    sigma_range (optional, tuple): Noise range. Default: (0, 1.0)
+    gray_prob (optional, float): Add grayscale noise probability. Default: 0
+    clip (optional, bool): Whether to clip image pixel. If `True`, clip image pixel to [0, 1] or [0, 255]. Default: ``True``
+    rounds (optional, bool): Noise rounds scale. Default: ``False``
+
+  Returns:
+    out (Tensor): Add gaussian noise to image
+  """
+
+  noise = _random_generate_gaussian_noise(image, sigma_range, gray_prob)
+  out = image + noise
+
+  if clip and rounds:
+    out = torch.clamp((out * 255.0).round(), 0, 255) / 255.
+  elif clip:
+    out = torch.clamp(out, 0, 1)
+  elif rounds:
+    out = (out * 255.0).round() / 255.
+
+  return out
+
+def random_add_poisson_noise(image: torch.Tensor, scale_range: tuple[float, float] = (0, 1.0), gray_prob: float | int = 0, clip: bool = True, rounds: bool = False) -> torch.Tensor:
+  """Random add gaussian noise to image (PyTorch)
+
+  Args:
+    image (Tensor): Input image
+    scale_range (optional, tuple): Noise scale range. Default: (0, 1.0)
+    gray_prob (optional, float): Add grayscale noise probability. Default: 0
+    clip (optional, bool): Whether to clip image pixel. If `True`, clip image pixel to [0, 1] or [0, 255]. Default: ``True``
+    rounds (optional, bool): Noise rounds scale. Default: ``False``
+
+  Returns:
+    out (Tensor): Add poisson noise to image
+  """
+
+  noise = _random_generate_poisson_noise(image, scale_range, gray_prob)
+  out = image + noise
+  if clip and rounds:
+    out = torch.clamp((out * 255.0).round(), 0, 255) / 255.
+  elif clip:
+    out = torch.clamp(out, 0, 1)
+  elif rounds:
+    out = (out * 255.0).round() / 255.
+  return out
+
+def filter2d(image: torch.Tensor, kernel: torch.Tensor) -> torch.Tensor:
+  """PyTorch implements `cv2.filter2D()`
+
+  Args:
+    image (Tensor): Image data, PyTorch data stream format
+    kernel (Tensor): Blur kernel data, PyTorch data stream format
+
+  Returns:
+    out (Tensor): Image processed with a specific filter on the image
+  """
+  k = kernel.size(-1)
+  _, H, W = image.shape
+  if k % 2 == 1:
+    image = torch.nn.functional.pad(image, (k // 2, k // 2, k // 2, k // 2), mode="reflect")
+  else:
+    raise ValueError("Wrong kernel size.")
+
+  kernel = kernel.unsqueeze(dim=0).unsqueeze(dim=0)
+  return torch.nn.functional.conv2d(input=image.reshape(-1, 1, *image.shape[1:]), weight=kernel, padding=0).reshape(-1, H, W)
+
+def jpeg_operation(image: torch.Tensor, quality: int) -> torch.Tensor:
+  return torchvision.io.decode_jpeg(torchvision.io.encode_jpeg((image * 255).clamp_(0, 255).to(torch.uint8), quality=quality), torchvision.io.ImageReadMode.RGB) / 255
+
+### Setting
+
+_degradation_model_parameters_dict = {
+  "sinc_kernel_size": 21,
+  "gaussian_kernel_range": [7, 9, 11, 13, 15, 17, 19, 21],
+  "gaussian_kernel_type": ["isotropic", "anisotropic", "generalized_isotropic", "generalized_anisotropic", "plateau_isotropic", "plateau_anisotropic"],
+  # First-order degradation parameters
+  "gaussian_kernel_probability1": [0.45, 0.25, 0.12, 0.03, 0.12, 0.03],
+  "sinc_kernel_probability1": 0.1,
+  "gaussian_sigma_range1": [0.2, 3],
+  "generalized_kernel_beta_range1": [0.5, 4],
+  "plateau_kernel_beta_range1": [1, 2],
+  # Second-order degradation parameters
+  "gaussian_kernel_probability2": [0.45, 0.25, 0.12, 0.03, 0.12, 0.03],
+  "sinc_kernel_probability2": 0.1,
+  "gaussian_sigma_range2": [0.2, 1.5],
+  "generalized_kernel_beta_range2": [0.5, 4],
+  "plateau_kernel_beta_range2": [1, 2],
+  "sinc_kernel_probability3": 0.8,
+}
+
+_degradation_process_parameters_dict = {
+  # The probability of triggering a first-order degenerate operation
+  "first_blur_probability": 1.0,
+  # First-Order Degenerate Operating Parameters
+  "resize_probability1": [0.2, 0.7, 0.1],
+  "resize_range1": [0.15, 1.5],
+  "gray_noise_probability1": 0.4,
+  "gaussian_noise_probability1": 0.5,
+  "noise_range1": [1, 30],
+  "poisson_scale_range1": [0.05, 3],
+  "jpeg_range1": [30, 95],
+  # The probability of triggering a second-order degenerate operation
+  "second_blur_probability": 0.8,
+  # Second-Order Degenerate Operating Parameters
+  "resize_probability2": [0.3, 0.4, 0.3],
+  "resize_range2": [0.3, 1.2],
+  "gray_noise_probability2": 0.4,
+  "gaussian_noise_probability2": 0.5,
+  "noise_range2": [1, 25],
+  "poisson_scale_range2": [0.05, 2.5],
+  "jpeg_range2": [30, 95],
+}
+
+def _prepare_kernel():
+  gaussian_kernel_size1 = random.choice(_degradation_model_parameters_dict["gaussian_kernel_range"])
+  if random.random() < _degradation_model_parameters_dict["sinc_kernel_probability1"]:
+    # This sinc filter setting applies to kernels in the range [7, 21] and can be adjusted dynamically
+    if gaussian_kernel_size1 < int(statistics.median(_degradation_model_parameters_dict["gaussian_kernel_range"])):
+      omega_c = random.uniform(math.pi / 3, math.pi)
+    else:
+      omega_c = random.uniform(math.pi / 5, math.pi)
+    gaussian_kernel1 = generate_sinc_kernel(omega_c, gaussian_kernel_size1, padding=False)
+  else:
+    gaussian_kernel1 = random_mixed_kernels(
+      kernel_type=_degradation_model_parameters_dict["gaussian_kernel_type"],
+      kernel_prob=_degradation_model_parameters_dict["gaussian_kernel_probability1"],
+      kernel_size=gaussian_kernel_size1,
+      sigma_x_range=_degradation_model_parameters_dict["gaussian_sigma_range1"],
+      sigma_y_range=_degradation_model_parameters_dict["gaussian_sigma_range1"],
+      rotation_range=[-math.pi, math.pi],
+      generalized_kernel_beta_range=_degradation_model_parameters_dict["generalized_kernel_beta_range1"],
+      plateau_kernel_beta_range=_degradation_model_parameters_dict["plateau_kernel_beta_range1"],
+      noise_range=None
+    )
+  # First-order degenerate Gaussian fill kernel size
+  pad_size = (_degradation_model_parameters_dict["gaussian_kernel_range"][-1] - gaussian_kernel_size1) // 2
+  gaussian_kernel1 = torch.nn.functional.pad(gaussian_kernel1, pad=(pad_size, pad_size, pad_size, pad_size), mode='constant', value=0)
+
+  # Generate a second-order degenerate Gaussian kernel
+  gaussian_kernel_size2 = random.choice(_degradation_model_parameters_dict["gaussian_kernel_range"])
+  if random.random() < _degradation_model_parameters_dict["sinc_kernel_probability2"]:
+    # This sinc filter setting applies to kernels in the range [7, 21] and can be adjusted dynamically
+    if gaussian_kernel_size2 < int(statistics.median(_degradation_model_parameters_dict["gaussian_kernel_range"])):
+      omega_c = random.uniform(math.pi / 3, math.pi)
+    else:
+      omega_c = random.uniform(math.pi / 5, math.pi)
+    gaussian_kernel2 = generate_sinc_kernel(omega_c, gaussian_kernel_size2, padding=False)
+  else:
+    gaussian_kernel2 = random_mixed_kernels(
+      kernel_type=_degradation_model_parameters_dict["gaussian_kernel_type"],
+      kernel_prob=_degradation_model_parameters_dict["gaussian_kernel_probability2"],
+      kernel_size=gaussian_kernel_size2,
+      sigma_x_range=_degradation_model_parameters_dict["gaussian_sigma_range2"],
+      sigma_y_range=_degradation_model_parameters_dict["gaussian_sigma_range2"],
+      rotation_range=[-math.pi, math.pi],
+      generalized_kernel_beta_range=_degradation_model_parameters_dict["generalized_kernel_beta_range2"],
+      plateau_kernel_beta_range=_degradation_model_parameters_dict["plateau_kernel_beta_range2"],
+      noise_range=None
+    )
+  # second-order degenerate Gaussian fill kernel size
+  pad_size = (_degradation_model_parameters_dict["gaussian_kernel_range"][-1] - gaussian_kernel_size2) // 2
+  gaussian_kernel2 = torch.nn.functional.pad(gaussian_kernel2, pad=(pad_size, pad_size, pad_size, pad_size), mode='constant', value=0)
+
+  # Sinc filter kernel
+  if random.random() < _degradation_model_parameters_dict["sinc_kernel_probability3"]:
+    gaussian_kernel_size3 = random.choice(_degradation_model_parameters_dict["gaussian_kernel_range"])
+    omega_c = random.uniform(math.pi / 3, math.pi)
+    sinc_kernel = generate_sinc_kernel(omega_c, gaussian_kernel_size3, padding=_degradation_model_parameters_dict["sinc_kernel_size"])
+  else:
+    sinc_kernel = torch.zeros([_degradation_model_parameters_dict["sinc_kernel_size"], _degradation_model_parameters_dict["sinc_kernel_size"]]).float()
+    sinc_kernel[_degradation_model_parameters_dict["sinc_kernel_size"] // 2, _degradation_model_parameters_dict["sinc_kernel_size"] // 2] = 1
+
+  return gaussian_kernel1, gaussian_kernel2, sinc_kernel
+
+def degradation_esrgan(gt: torch.Tensor, upscale_factor: int, usm_sharpener: torch.nn.Module = None) -> torch.Tensor:
+  """degradation processing
+
+  Args:
+    gt (Tensor): the input ground truth image
+    gaussian_kernel1 (Tensor): Gaussian kernel used for the first degradation
+    gaussian_kernel2 (Tensor): The Gaussian kernel used for the second degradation
+    sinc_kernel (Tensor): Sinc kernel used for degradation
+    upscale_factor (int): zoom factor
+    degradation_process_parameters_dict (dict): A dictionary containing degradation processing parameters
+    usm_sharpener (nn.Module): USM sharpening model. Default: ``None``
+
+  Returns:
+    lr (Tensor): Low-resolution image after degradation processing
+  """
+
+  gaussian_kernel1, gaussian_kernel2, sinc_kernel = _prepare_kernel()
+  _, H, W = gt.shape
+
+  # When the sharpening operation is not suitable, the GT after sharpening is equal to GT
+  gt_usm = gt.clone()
+
+  # Sharpen the ground truth image
+  if usm_sharpener is not None:
+    gt_usm = usm_sharpener(gt)
+
+  # The first degradation processing
+  # Gaussian
+  if random.random() <= _degradation_process_parameters_dict["first_blur_probability"]:
+    out = filter2d(gt_usm, gaussian_kernel1)
+
+  # Resize
+  updown_type = random.choices(["up", "down", "keep"], _degradation_process_parameters_dict["resize_probability1"])[0]
+  if updown_type == "up":
+    scale = random.uniform(1, _degradation_process_parameters_dict["resize_range1"][1])
+  elif updown_type == "down":
+    scale = random.uniform(_degradation_process_parameters_dict["resize_range1"][0], 1)
+  else:
+    scale = 1
+  mode = random.choice(["area", "bilinear", "bicubic"])
+  out = torch.nn.functional.interpolate(out.unsqueeze(0), scale_factor=scale, mode=mode).squeeze(dim=0)
+
+  # noise
+  if random.random() < _degradation_process_parameters_dict["gaussian_noise_probability1"]:
+    out = random_add_gaussian_noise(image=out, sigma_range=_degradation_process_parameters_dict["noise_range1"], gray_prob=_degradation_process_parameters_dict["gray_noise_probability1"], clip=True, rounds=False, )
+  else:
+    out = random_add_poisson_noise(image=out, scale_range=_degradation_process_parameters_dict["poisson_scale_range1"], gray_prob=_degradation_process_parameters_dict["gray_noise_probability1"], clip=True, rounds=False)
+
+  # JPEG compression
+  quality = random.randrange(*_degradation_process_parameters_dict["jpeg_range1"])
+  out = torch.clamp(out, 0, 1)  # clamp to [0, 1], otherwise JPEGer will result in unpleasant artifacts
+  out = jpeg_operation(out, quality)
+
+  # second degradation processing
+  # Gaussian
+  if random.random() < _degradation_process_parameters_dict["second_blur_probability"]:
+    out = filter2d(out, gaussian_kernel2)
+
+  # Resize
+  updown_type = random.choices(["up", "down", "keep"], _degradation_process_parameters_dict["resize_probability2"])[0]
+  if updown_type == "up":
+    scale = random.uniform(1, _degradation_process_parameters_dict["resize_range2"][1])
+  elif updown_type == "down":
+    scale = random.uniform(_degradation_process_parameters_dict["resize_range2"][0], 1)
+  else:
+    scale = 1
+  mode = random.choice(["area", "bilinear", "bicubic"])
+  out = torch.nn.functional.interpolate(out.unsqueeze(0), size=(int(H / upscale_factor * scale), int(W / upscale_factor * scale)), mode=mode).squeeze(dim=0)
+
+  # Noise
+  if random.random() < _degradation_process_parameters_dict["gaussian_noise_probability2"]:
+    out = random_add_gaussian_noise(image=out, sigma_range=_degradation_process_parameters_dict["noise_range2"], gray_prob=_degradation_process_parameters_dict["gray_noise_probability2"], clip=True, rounds=False)
+  else:
+    out = random_add_poisson_noise(image=out, scale_range=_degradation_process_parameters_dict["poisson_scale_range2"], gray_prob=_degradation_process_parameters_dict["gray_noise_probability2"], clip=True, rounds=False)
+
+  if random.random() < 0.5:
+    # Zoom out -> Sinc filter -> JPEG compression
+    out = torch.nn.functional.interpolate(out.unsqueeze(0), size=(H // upscale_factor, W // upscale_factor), mode=random.choice(["area", "bilinear", "bicubic"])).squeeze(dim=0)
+    out = filter2d(out, sinc_kernel)
+
+    quality = random.randrange(*_degradation_process_parameters_dict["jpeg_range2"])
+    out = torch.clamp(out, 0, 1)
+    out = jpeg_operation(out, quality)
+  else:
+    # JPEG compression -> reduction -> Sinc filter
+    quality = random.randrange(*_degradation_process_parameters_dict["jpeg_range2"])
+    out = torch.clamp(out, 0, 1)
+    out = jpeg_operation(out, quality)
+
+    out = torch.nn.functional.interpolate(out.unsqueeze(0), size=(H // upscale_factor, W // upscale_factor), mode=random.choice(["area", "bilinear", "bicubic"])).squeeze(dim=0)
+    out = filter2d(out, sinc_kernel)
+
+  # Intercept the pixel range of the output image
+  lr = torch.clamp((out * 255.0).round(), 0, 255) / 255
+  return lr
