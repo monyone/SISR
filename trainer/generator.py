@@ -14,7 +14,7 @@ from torch.autograd import Variable
 from models.handler import Handler
 
 class GeneratorTrainer:
-  def __init__(self, model: nn.Module, optimizer: optim.Optimizer, handler: Handler, state: str | None, seed: int | None, train_loader: DataLoader, test_loader: DataLoader) -> None:
+  def __init__(self, model: nn.Module, optimizer: optim.Optimizer, handler: Handler, state: str | None, train_loader: DataLoader, test_loader: DataLoader, seed: int | None = None, use_amp: bool = True) -> None:
     super().__init__()
     self.device: str = 'cuda' if cuda.is_available() else 'cpu'
     self.model: nn.Module = model.to(self.device)
@@ -23,6 +23,8 @@ class GeneratorTrainer:
     self.handler: Handler = handler.to(self.device)
     self.train_loader: DataLoader = train_loader
     self.test_loader: DataLoader = test_loader
+    self.use_amp = use_amp
+    self.scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
     if seed is None: return
     torch.manual_seed(seed)
     if self.device != 'cuda': return
@@ -31,15 +33,18 @@ class GeneratorTrainer:
   def train(self, epoch) -> None:
     self.model.train()
     epoch_loss, epoch_psnr = 0, 0
+
     for batch in self.train_loader:
       highres, lowres = batch
       highres = tuple(map(lambda n: n.to(self.device), highres)) if type(highres) is list else highres.to(self.device)
       lowres = tuple(map(lambda n: n.to(self.device), lowres)) if type(lowres) is list else lowres.to(self.device)
 
       self.optimizer.zero_grad()
-      _, loss = self.handler.train(lowres, highres)
-      loss.backward()
-      self.optimizer.step()
+      with torch.autocast(device_type=self.device, enabled=self.use_amp):
+        _, loss = self.handler.train(lowres, highres)
+      self.scaler.scale(loss).backward()
+      self.scaler.step(self.optimizer)
+      self.scaler.update()
 
       epoch_loss += cast(float, loss.item())
       epoch_psnr += 10 * log10(1 / cast(float, loss.item())) if loss.item() != 0 else 100

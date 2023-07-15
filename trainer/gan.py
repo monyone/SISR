@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 from models.handler import Handler
 
 class GANTrainer:
-  def __init__(self, g_model: nn.Module, d_model: nn.Module, g_optimizer: optim.Optimizer, d_optimizer: optim.Optimizer, g_handler: Handler, d_handler: Handler, g_state: str | None, seed: int | None, train_loader: DataLoader, test_loader: DataLoader) -> None:
+  def __init__(self, g_model: nn.Module, d_model: nn.Module, g_optimizer: optim.Optimizer, d_optimizer: optim.Optimizer, g_handler: Handler, d_handler: Handler, g_state: str | None, train_loader: DataLoader, test_loader: DataLoader, seed: int | None = None, use_amp: bool = True) -> None:
     super().__init__()
     self.device: str = 'cuda' if cuda.is_available() else 'cpu'
     self.g_model: nn.Module = g_model.to(self.device)
@@ -25,6 +25,8 @@ class GANTrainer:
     self.d_handler: Handler = d_handler.to(self.device)
     self.train_loader: DataLoader = train_loader
     self.test_loader: DataLoader = test_loader
+    self.use_amp = use_amp
+    self.scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
     if seed is None: return
     torch.manual_seed(seed)
     if self.device != 'cuda': return
@@ -39,17 +41,22 @@ class GANTrainer:
       highres = tuple(map(lambda n: n.to(self.device), highres)) if type(highres) is list else highres.to(self.device)
       lowres = tuple(map(lambda n: n.to(self.device), lowres)) if type(lowres) is list else lowres.to(self.device)
 
-      sr, content_loss = self.g_handler.train(lowres, highres)
+      with torch.autocast(device_type=self.device, enabled=self.use_amp):
+        sr, content_loss = self.g_handler.train(lowres, highres)
 
       self.d_optimizer.zero_grad()
-      _, d_loss, adversarial_loss = self.d_handler.train(sr, highres)
-      d_loss.backward()
-      self.d_optimizer.step()
+      with torch.autocast(device_type=self.device, enabled=self.use_amp):
+        _, d_loss, adversarial_loss = self.d_handler.train(sr, highres)
+
+      self.scaler.scale(d_loss).backward()
+      self.scaler.step(self.d_optimizer)
+      #self.scaler.update()
 
       self.g_optimizer.zero_grad()
       g_loss = (content_loss + adversarial_loss)
-      g_loss.backward()
-      self.g_optimizer.step()
+      self.scaler.scale(g_loss).backward()
+      self.scaler.step(self.g_optimizer)
+      self.scaler.update()
 
       epoch_loss += cast(float, g_loss.item())
       epoch_psnr += 10 * log10(1 / cast(float, g_loss.item())) if g_loss.item() != 0 else 100

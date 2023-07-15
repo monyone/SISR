@@ -58,6 +58,7 @@ if __name__ == '__main__':
   parser.add_argument('--discriminator_patch', type=int, default=128, help="SISR discriminator patch size")
   parser.add_argument('--scale', type=int, default=2, help="Upscaling scale factor")
   parser.add_argument('--batch', type=int, default=1, help="Batch size")
+  parser.add_argument('--amp', action='store_true', help="Train with amp")
   parser.add_argument('--distort', type=str, help="image distortion method")
   parser.add_argument('--y_only', action='store_true', help="Train y color only")
 
@@ -102,12 +103,12 @@ if __name__ == '__main__':
     d_handler = discriminator_handler_class(discriminator_model)
     g_state = args.generator_state
 
-    train = GANTrainer(g_model=generator_model, d_model=discriminator_model, g_optimizer=g_optimizer, g_handler=g_handler, g_state=g_state, d_optimizer=d_optimizer, d_handler=d_handler, seed=None, train_loader=train_loader, test_loader=validation_loader)
+    train = GANTrainer(g_model=generator_model, d_model=discriminator_model, g_optimizer=g_optimizer, g_handler=g_handler, g_state=g_state, d_optimizer=d_optimizer, d_handler=d_handler, train_loader=train_loader, test_loader=validation_loader, seed=None, use_amp=args.amp)
     train.run(epochs=args.epochs, save_dir=Path(f'./result/{args.discriminator}_x{args.scale}'), save_prefix='state')
   else:
     optimizer = optim.Adam(generator_model.parameters(), lr=generator_lr)
     handler = geneartor_handler_class(generator_model)
     state = args.generator_state
 
-    train = GeneratorTrainer(model=generator_model, optimizer=optimizer, handler=handler, seed=None, train_loader=train_loader, state=state, test_loader=validation_loader)
+    train = GeneratorTrainer(model=generator_model, optimizer=optimizer, handler=handler, train_loader=train_loader, state=state, test_loader=validation_loader, seed=None, use_amp=args.amp)
     train.run(epochs=args.epochs, save_dir=Path(f'./result/{args.generator}_x{args.scale}'), save_prefix='state')
