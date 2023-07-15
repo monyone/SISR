@@ -28,14 +28,18 @@ class VGGLoss(nn.Module):
     target = self.vgg_net(self.normalize(if_y_then_gray(target)))
     return self.criterion(sr, target)
 
-class ESRGANGeneratorHandler(Handler):
+class RealESRGANGeneratorHandler(Handler):
   def __init__(self, model: nn.Module, handler: Handler | None = None):
     super().__init__()
     self.model = model
     self.handler = handler
     self.pixel_loss = nn.L1Loss()
     self.mse_loss = nn.MSELoss()
-    self.content_loss = VGGLoss(34)
+    self.content_loss_2 = VGGLoss(2)
+    self.content_loss_7 = VGGLoss(7)
+    self.content_loss_16 = VGGLoss(16)
+    self.content_loss_25 = VGGLoss(25)
+    self.content_loss_34 = VGGLoss(34)
 
   def to(self, device: str) -> Handler:
     self.content_loss.to(device=device)
@@ -47,7 +51,9 @@ class ESRGANGeneratorHandler(Handler):
     else:
       sr = self.model(input)
 
-    return sr, 0.01 * self.pixel_loss(sr, target) + self.content_loss(sr, target)
+    content_loss = 0.1 * (self.content_loss_2(sr, target) + self.content_loss_7(sr, target)) + 1.0 * (self.content_loss_16 + self.content_loss_25 + self.content_loss_34)
+
+    return sr, self.pixel_loss(sr, target) + content_loss
 
   def statistics(self, input, target):
     with torch.no_grad():
@@ -60,7 +66,7 @@ class ESRGANGeneratorHandler(Handler):
   def test(self, input):
     return self.model(input).clamp_(0, 1)
 
-class ESRGANDiscriminatorHandler(Handler):
+class RealESRGANDiscriminatorHandler(Handler):
   def __init__(self, model: nn.Module):
     super().__init__()
     self.model = model
@@ -73,7 +79,7 @@ class ESRGANDiscriminatorHandler(Handler):
     g_real = d_real.detach()
     d_loss = (self.criterion(d_fake - torch.mean(d_real), torch.zeros_like(d_fake)) + self.criterion(d_real - torch.mean(d_fake), torch.ones_like(d_real))) / 2
     g_loss = (self.criterion(g_fake - torch.mean(g_real), torch.ones_like(g_fake)) + self.criterion(g_real - torch.mean(g_fake), torch.zeros_like(g_real))) / 2
-    return d_loss.item(), d_loss, g_loss * 0.005
+    return d_loss.item(), d_loss, g_loss * 0.1
 
   def statistics(self, fake, real):
     with torch.no_grad():

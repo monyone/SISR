@@ -547,6 +547,15 @@ def filter2d(image: torch.Tensor, kernel: torch.Tensor) -> torch.Tensor:
 def jpeg_operation(image: torch.Tensor, quality: int) -> torch.Tensor:
   return torchvision.io.decode_jpeg(torchvision.io.encode_jpeg((image * 255).clamp_(0, 255).to(torch.uint8), quality=quality), torchvision.io.ImageReadMode.RGB) / 255
 
+def usm_sharp(image: torch.Tensor, weight: float = 0.5, radius: int = 40, threashold: int = 10) -> torch.Tensor:
+  if radius % 2 == 0: radius += 1
+  blur = torchvision.transforms.GaussianBlur(kernel_size=(radius, radius), sigma=(0.3 * (radius / 2 - 1) + 0.8))
+
+  residual: torch.Tensor = image - blur(image)
+  mask = (torch.abs(residual) * 255 > threashold).float()
+  soft_mask = blur(mask)
+  return soft_mask * (image + weight * residual).clamp(0, 1) + (1 - soft_mask) * image
+
 ### Setting
 
 _degradation_model_parameters_dict = {
@@ -652,31 +661,23 @@ def _prepare_kernel():
 
   return gaussian_kernel1, gaussian_kernel2, sinc_kernel
 
-def degradation_esrgan(gt: torch.Tensor, upscale_factor: int, usm_sharpener: torch.nn.Module = None) -> torch.Tensor:
+def degradation_real_esrgan(image: torch.Tensor, scale_factor: int, use_sharpness: bool = False) -> torch.Tensor:
   """degradation processing
 
   Args:
-    gt (Tensor): the input ground truth image
-    gaussian_kernel1 (Tensor): Gaussian kernel used for the first degradation
-    gaussian_kernel2 (Tensor): The Gaussian kernel used for the second degradation
-    sinc_kernel (Tensor): Sinc kernel used for degradation
+    image (Tensor): the input ground truth image
     upscale_factor (int): zoom factor
-    degradation_process_parameters_dict (dict): A dictionary containing degradation processing parameters
-    usm_sharpener (nn.Module): USM sharpening model. Default: ``None``
+    use_sharpness (bool): using USM sharpening. Default: False
 
   Returns:
     lr (Tensor): Low-resolution image after degradation processing
   """
 
   gaussian_kernel1, gaussian_kernel2, sinc_kernel = _prepare_kernel()
-  _, H, W = gt.shape
+  _, H, W = image.shape
 
   # When the sharpening operation is not suitable, the GT after sharpening is equal to GT
-  gt_usm = gt.clone()
-
-  # Sharpen the ground truth image
-  if usm_sharpener is not None:
-    gt_usm = usm_sharpener(gt)
+  gt_usm = image if not use_sharpness else usm_sharp(image)
 
   # The first degradation processing
   # Gaussian
@@ -719,7 +720,7 @@ def degradation_esrgan(gt: torch.Tensor, upscale_factor: int, usm_sharpener: tor
   else:
     scale = 1
   mode = random.choice(["area", "bilinear", "bicubic"])
-  out = torch.nn.functional.interpolate(out.unsqueeze(0), size=(int(H / upscale_factor * scale), int(W / upscale_factor * scale)), mode=mode).squeeze(dim=0)
+  out = torch.nn.functional.interpolate(out.unsqueeze(0), size=(int(H / scale * scale), int(W / scale_factor * scale)), mode=mode).squeeze(dim=0)
 
   # Noise
   if random.random() < _degradation_process_parameters_dict["gaussian_noise_probability2"]:
@@ -729,7 +730,7 @@ def degradation_esrgan(gt: torch.Tensor, upscale_factor: int, usm_sharpener: tor
 
   if random.random() < 0.5:
     # Zoom out -> Sinc filter -> JPEG compression
-    out = torch.nn.functional.interpolate(out.unsqueeze(0), size=(H // upscale_factor, W // upscale_factor), mode=random.choice(["area", "bilinear", "bicubic"])).squeeze(dim=0)
+    out = torch.nn.functional.interpolate(out.unsqueeze(0), size=(H // scale_factor, W // scale_factor), mode=random.choice(["area", "bilinear", "bicubic"])).squeeze(dim=0)
     out = filter2d(out, sinc_kernel)
 
     quality = random.randrange(*_degradation_process_parameters_dict["jpeg_range2"])
@@ -741,7 +742,7 @@ def degradation_esrgan(gt: torch.Tensor, upscale_factor: int, usm_sharpener: tor
     out = torch.clamp(out, 0, 1)
     out = jpeg_operation(out, quality)
 
-    out = torch.nn.functional.interpolate(out.unsqueeze(0), size=(H // upscale_factor, W // upscale_factor), mode=random.choice(["area", "bilinear", "bicubic"])).squeeze(dim=0)
+    out = torch.nn.functional.interpolate(out.unsqueeze(0), size=(H // scale_factor, W // scale_factor), mode=random.choice(["area", "bilinear", "bicubic"])).squeeze(dim=0)
     out = filter2d(out, sinc_kernel)
 
   # Intercept the pixel range of the output image
