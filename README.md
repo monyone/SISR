@@ -24,6 +24,7 @@
 * [TSRN (ECCV 2018)](./models/TSRN/) [[Paper]](https://arxiv.org/abs/1808.00043)
 * [RDN (CVPR 2018)](./models/RDN/) [[Paper]](https://arxiv.org/abs/1802.08797)
 * [RRDBNet, ESRGAN (ECCV 2018)](./models/ESRGAN/) [[Paper]](https://arxiv.org/abs/1809.00219)
+* [Real-ESRNet, Real-ESRGAN (ICCV Workshop 2021)](./models/RealESRGAN/) [[Paper]](https://arxiv.org/abs/2107.10833)
 
 ## Usage
 

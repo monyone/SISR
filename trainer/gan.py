@@ -35,8 +35,11 @@ class GANTrainer:
     torch.backends.cudnn.deterministic = seed is not None
 
   def train(self, epoch) -> None:
+    elapsed = 0
+
     self.d_model.train()
     self.g_model.train()
+
     epoch_loss, epoch_psnr = 0, 0
     for batch in self.train_loader:
       highres, lowres = batch
@@ -62,6 +65,9 @@ class GANTrainer:
 
       epoch_loss += cast(float, g_loss.item())
       epoch_psnr += 10 * log10(1 / cast(float, g_loss.item())) if g_loss.item() != 0 else 100
+
+      print("\r", elapsed, ':', len(self.train_loader), end="")
+      elapsed += 1
 
     print('[epoch:{}, train]: Loss: {:.4f}, PSNR: {:.4f} dB'.format(epoch, epoch_loss / len(self.train_loader), epoch_psnr / len(self.train_loader)))
 

@@ -81,8 +81,8 @@ class RealESRGANDiscriminatorHandler(Handler):
     d_real = self.model(real.detach())
     g_fake = self.model(fake)
     g_real = d_real.detach()
-    d_loss = (self.criterion(d_fake - torch.mean(d_real), torch.zeros_like(d_fake)) + self.criterion(d_real - torch.mean(d_fake), torch.ones_like(d_real))) / 2
-    g_loss = (self.criterion(g_fake - torch.mean(g_real), torch.ones_like(g_fake)) + self.criterion(g_real - torch.mean(g_fake), torch.zeros_like(g_real))) / 2
+    d_loss = (self.criterion(d_fake - torch.mean(d_real, dim=0), torch.zeros_like(d_fake)) + self.criterion(d_real - torch.mean(d_fake, dim=0), torch.ones_like(d_real))) / 2
+    g_loss = (self.criterion(g_fake - torch.mean(g_real, dim=0), torch.ones_like(g_fake)) + self.criterion(g_real - torch.mean(g_fake, dim=0), torch.zeros_like(g_real))) / 2
     return d_loss.item(), d_loss, g_loss * 0.1
 
   def statistics(self, fake, real):
