@@ -3,6 +3,7 @@ import torch.nn as nn
 
 from torchvision.transforms import Normalize
 from torchvision.models.vgg import vgg19, VGG19_Weights
+from torchvision.models.feature_extraction import create_feature_extractor
 
 from typing import cast
 from math import log10
@@ -15,10 +16,10 @@ def if_y_then_gray(tensor: torch.Tensor):
   return tensor.repeat_interleave(repeats=3, dim=1)
 
 class VGGLoss(nn.Module):
-  def __init__(self, layer: int):
+  def __init__(self, weights: dict[int, float]):
     super().__init__()
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    self.vgg_net = nn.Sequential(*list(vgg19(weights=VGG19_Weights.IMAGENET1K_V1).features)[:layer + 1]).to(device=device).eval()
+    self.weights = weights
+    self.vgg_net = create_feature_extractor(vgg19(weights=VGG19_Weights.IMAGENET1K_V1), return_nodes={f'features.{layer}': f'{layer}' for layer in weights}).eval()
     for param in self.vgg_net.parameters(): param.requires_grad = False
     self.criterion = nn.MSELoss()
     self.normalize = Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -26,13 +27,13 @@ class VGGLoss(nn.Module):
   def forward(self, sr, target):
     sr = self.vgg_net(self.normalize(if_y_then_gray(sr)))
     target = self.vgg_net(self.normalize(if_y_then_gray(target)))
-    return self.criterion(sr, target)
+    return sum(self.criterion(sr[f'{layer}'], target[f'{layer}']) * weight for layer, weight in self.weights.items())
 
 class TextureLoss(nn.Module):
-  def __init__(self, layer: int):
+  def __init__(self, weights: dict[int, float]):
     super().__init__()
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    self.vgg_net = nn.Sequential(*list(vgg19(weights=VGG19_Weights.IMAGENET1K_V1).features)[:layer + 1]).to(device=device).eval()
+    self.weights = weights
+    self.vgg_net = create_feature_extractor(vgg19(weights=VGG19_Weights.IMAGENET1K_V1), return_nodes={f'features.{layer}': f'{layer}' for layer in weights}).eval()
     for param in self.vgg_net.parameters(): param.requires_grad = False
     self.criterion = nn.MSELoss()
     self.normalize = Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -49,9 +50,9 @@ class TextureLoss(nn.Module):
     return tensor.unfold(2, size=patch, step=patch).unfold(3, size=patch, step=patch).permute([0, 2, 3, 1, 4, 5]).reshape(-1, c, patch, patch)
 
   def forward(self, sr, target):
-    sr = TextureLoss.gram_matrix(TextureLoss.into_patch(self.vgg_net(self.normalize(if_y_then_gray(sr))), 16))
-    target = TextureLoss.gram_matrix(TextureLoss.into_patch(self.vgg_net(self.normalize(if_y_then_gray(target))), 16))
-    return self.criterion(sr, target)
+    sr = self.vgg_net(self.normalize(if_y_then_gray(sr)))
+    target = self.vgg_net(self.normalize(if_y_then_gray(target)))
+    return sum(self.criterion(TextureLoss.gram_matrix(TextureLoss.into_patch(sr[f'{layer}'], 16)), TextureLoss.gram_matrix(TextureLoss.into_patch(target[f'{layer}'], 16))) * weight for layer, weight in self.weights.items())
 
 class EnhanceNetGeneratorHandler(Handler):
   def __init__(self, model: nn.Module, handler: Handler | None = None):
@@ -59,30 +60,26 @@ class EnhanceNetGeneratorHandler(Handler):
     self.model = model
     self.handler = handler
     self.mse_loss = nn.MSELoss()
-    self.feature_2_loss = VGGLoss(layer=9)
-    self.feature_5_loss = VGGLoss(layer=36)
-    self.texture_1_1_loss = TextureLoss(layer=0)
-    self.texture_2_1_loss = TextureLoss(layer=5)
-    self.texture_3_1_loss = TextureLoss(layer=10)
+    self.feature_loss = VGGLoss(weights={9: 0.2, 36: 0.02})
+    self.texture_loss = TextureLoss(weights={0: 10, 5: 100/3, 10: 100/3})
 
   def to(self, device: str) -> Handler:
-    self.feature_2_loss.to(device=device)
-    self.feature_5_loss.to(device=device)
-    self.texture_1_1_loss.to(device=device)
-    self.texture_2_1_loss.to(device=device)
-    self.texture_3_1_loss.to(device=device)
+    self.feature_loss.to(device=device)
+    self.texture_loss.to(device=device)
     return self
 
   def train(self, input, target):
+    import time
+    begin = time.monotonic_ns()
     if self.handler:
       sr, _ = self.handler.train(input, target)
     else:
       sr = self.model(input)
+    end = time.monotonic_ns()
+    print('g inf: gen', (end - begin) / 1000000)
 
-    content_loss = 0.2 * self.feature_2_loss(sr, target) + 0.02 * self.feature_5_loss(sr, target) # MSE based loss
     # texture_loss = (3e-7 * self.texture_1_1_loss(sr, target) + 1e-6 * self.texture_2_1_loss(sr, target) + 1e-6 * self.texture_3_1_loss(sr, target)) # Squred Sum Total Loss (in paper, assume 128x128 train, vgg19 mean activation required)
-    texture_loss = 10 * (self.texture_1_1_loss(sr, target) + 10 * (self.texture_2_1_loss(sr, target) + self.texture_3_1_loss(sr, target)) / 3)  # (MSE based loss for pretrain model, adjust myself)
-    return sr, content_loss + texture_loss
+    return sr, self.feature_loss(sr, target) + self.texture_loss(sr, target)
 
   def statistics(self, input, target):
     with torch.no_grad():
