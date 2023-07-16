@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 from math import log10
+import time
+from datetime import timedelta
 
 from typing import cast
 
@@ -42,6 +44,8 @@ class GANTrainer:
 
     epoch_loss, epoch_psnr = 0, 0
     for batch in self.train_loader:
+      begin = time.monotonic_ns()
+
       highres, lowres = batch
       highres = tuple(map(lambda n: n.to(self.device), highres)) if type(highres) is list else highres.to(self.device)
       lowres = tuple(map(lambda n: n.to(self.device), lowres)) if type(lowres) is list else lowres.to(self.device)
@@ -66,9 +70,11 @@ class GANTrainer:
       epoch_loss += cast(float, g_loss.item())
       epoch_psnr += 10 * log10(1 / cast(float, g_loss.item())) if g_loss.item() != 0 else 100
 
-      print("\r", elapsed, ':', len(self.train_loader), end="")
+      end = time.monotonic_ns()
+      print("\r", f'epoch:{epoch}', f'{elapsed}/{len(self.train_loader)}', f'ETA:{timedelta(seconds=((len(self.train_loader) - elapsed) * ((end - begin) / 1000000000)))}', end="")
       elapsed += 1
 
+    print()
     print('[epoch:{}, train]: Loss: {:.4f}, PSNR: {:.4f} dB'.format(epoch, epoch_loss / len(self.train_loader), epoch_psnr / len(self.train_loader)))
 
   def test(self, epoch: int) -> None:
