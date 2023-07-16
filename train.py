@@ -92,8 +92,8 @@ if __name__ == '__main__':
   }
 
   generator_model, geneartor_handler_class, train_set, validation_set, generator_lr = generator_models[args.generator]
-  train_loader = DataLoader(dataset=train_set, batch_size=args.batch, num_workers=os.cpu_count(), pin_memory=True)
-  validation_loader = DataLoader(dataset=validation_set, num_workers=os.cpu_count(), pin_memory=True)
+  train_loader = DataLoader(dataset=train_set, batch_size=args.batch, num_workers=os.cpu_count(), pin_memory=True, persistent_workers=True)
+  validation_loader = DataLoader(dataset=validation_set, num_workers=os.cpu_count(), pin_memory=True, persistent_workers=True)
   if args.discriminator in discriminator_models:
     discriminator_model, updated_generator_handler_class, discriminator_handler_class, discriminator_lr = discriminator_models[args.discriminator]
 

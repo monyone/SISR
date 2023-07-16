@@ -58,7 +58,7 @@ class UpscaleBlock(nn.Module):
     return self.block(x)
 
 class RealESRNet(nn.Module):
-  def __init__(self, scale: int, c: int = 3, f = 3, n: int = 64, g: int = 32, d: int = 23, l: int = 3, b: int = 5) -> None:
+  def __init__(self, scale: int, c: int = 3, f: int = 3, n: int = 64, g: int = 32, d: int = 23, l: int = 3, b: int = 5) -> None:
     """RealESRNet's Constructor
 
     Args:

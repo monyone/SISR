@@ -29,6 +29,8 @@ class GeneratorTrainer:
     torch.manual_seed(seed)
     if self.device != 'cuda': return
     torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.benchmark = seed is None
+    torch.backends.cudnn.deterministic = seed is not None
 
   def train(self, epoch) -> None:
     self.model.train()

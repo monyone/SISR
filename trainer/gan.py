@@ -31,6 +31,8 @@ class GANTrainer:
     torch.manual_seed(seed)
     if self.device != 'cuda': return
     torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.benchmark = seed is None
+    torch.backends.cudnn.deterministic = seed is not None
 
   def train(self, epoch) -> None:
     self.d_model.train()
@@ -50,12 +52,12 @@ class GANTrainer:
 
       self.scaler.scale(d_loss).backward()
       self.scaler.step(self.d_optimizer)
-      #self.scaler.update()
 
       self.g_optimizer.zero_grad()
       g_loss = (content_loss + adversarial_loss)
       self.scaler.scale(g_loss).backward()
       self.scaler.step(self.g_optimizer)
+
       self.scaler.update()
 
       epoch_loss += cast(float, g_loss.item())
