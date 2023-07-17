@@ -3,6 +3,7 @@ import torch.nn as nn
 
 from torchvision.transforms import Normalize
 from torchvision.models.vgg import vgg19, VGG19_Weights
+from torchvision.models.feature_extraction import create_feature_extractor
 
 from typing import cast
 from math import log10
@@ -15,18 +16,18 @@ def if_y_then_gray(tensor: torch.Tensor):
   return tensor.repeat_interleave(repeats=3, dim=1)
 
 class VGGLoss(nn.Module):
-  def __init__(self, layer: int):
+  def __init__(self, weights: dict[int, float]):
     super().__init__()
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    self.vgg_net = nn.Sequential(*list(vgg19(weights=VGG19_Weights.IMAGENET1K_V1).features)[:layer + 1]).to(device=device).eval()
+    self.weights = weights
+    self.vgg_net = create_feature_extractor(vgg19(weights=VGG19_Weights.IMAGENET1K_V1), return_nodes={f'features.{layer}': f'{layer}' for layer in weights}).eval()
     for param in self.vgg_net.parameters(): param.requires_grad = False
-    self.criterion = nn.L1Loss()
-    self.normalize = Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225], inplace=False)
+    self.criterion = nn.MSELoss()
+    self.normalize = Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
   def forward(self, sr, target):
     sr = self.vgg_net(self.normalize(if_y_then_gray(sr)))
     target = self.vgg_net(self.normalize(if_y_then_gray(target)))
-    return self.criterion(sr, target)
+    return sum(self.criterion(sr[f'{layer}'], target[f'{layer}']) * weight for layer, weight in self.weights.items())
 
 class RealESRGANGeneratorHandler(Handler):
   def __init__(self, model: nn.Module, handler: Handler | None = None):
@@ -35,18 +36,10 @@ class RealESRGANGeneratorHandler(Handler):
     self.handler = handler
     self.pixel_loss = nn.L1Loss()
     self.mse_loss = nn.MSELoss()
-    self.content_loss_2 = VGGLoss(2)
-    self.content_loss_7 = VGGLoss(7)
-    self.content_loss_16 = VGGLoss(16)
-    self.content_loss_25 = VGGLoss(25)
-    self.content_loss_34 = VGGLoss(34)
+    self.content_loss = VGGLoss(weights={2: 0.1, 7: 0.1, 16: 1, 25: 1, 34: 1})
 
   def to(self, device: str) -> Handler:
-    self.content_loss_2.to(device)
-    self.content_loss_7.to(device)
-    self.content_loss_16.to(device)
-    self.content_loss_25.to(device)
-    self.content_loss_34.to(device)
+    self.content_loss.to(device)
     return self
 
   def train(self, input, target):
@@ -55,9 +48,7 @@ class RealESRGANGeneratorHandler(Handler):
     else:
       sr = self.model(input)
 
-    content_loss = 0.1 * (self.content_loss_2(sr, target) + self.content_loss_7(sr, target)) + 1.0 * (self.content_loss_16(sr, target) + self.content_loss_25(sr, target) + self.content_loss_34(sr, target))
-
-    return sr, self.pixel_loss(sr, target) + content_loss
+    return sr, self.pixel_loss(sr, target) + self.content_loss(sr, target)
 
   def statistics(self, input, target):
     with torch.no_grad():

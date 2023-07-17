@@ -3,6 +3,7 @@ import torch.nn as nn
 
 from torchvision.transforms import Normalize
 from torchvision.models.vgg import vgg19, VGG19_Weights
+from torchvision.models.feature_extraction import create_feature_extractor
 
 from typing import cast
 from math import log10
@@ -15,10 +16,10 @@ def if_y_then_gray(tensor: torch.Tensor):
   return tensor.repeat_interleave(repeats=3, dim=1)
 
 class VGGLoss(nn.Module):
-  def __init__(self, layer: int):
+  def __init__(self, weights: dict[int, float]):
     super().__init__()
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    self.vgg_net = nn.Sequential(*list(vgg19(weights=VGG19_Weights.IMAGENET1K_V1).features)[:layer + 1]).to(device=device).eval()
+    self.weights = weights
+    self.vgg_net = create_feature_extractor(vgg19(weights=VGG19_Weights.IMAGENET1K_V1), return_nodes={f'features.{layer}': f'{layer}' for layer in weights}).eval()
     for param in self.vgg_net.parameters(): param.requires_grad = False
     self.criterion = nn.MSELoss()
     self.normalize = Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -26,7 +27,7 @@ class VGGLoss(nn.Module):
   def forward(self, sr, target):
     sr = self.vgg_net(self.normalize(if_y_then_gray(sr)))
     target = self.vgg_net(self.normalize(if_y_then_gray(target)))
-    return self.criterion(sr, target)
+    return sum(self.criterion(sr[f'{layer}'], target[f'{layer}']) * weight for layer, weight in self.weights.items())
 
 class SRGANGeneratorHandler(Handler):
   def __init__(self, model: nn.Module, handler: Handler | None = None):
@@ -34,7 +35,7 @@ class SRGANGeneratorHandler(Handler):
     self.model = model
     self.handler = handler
     self.mse_loss = nn.MSELoss()
-    self.content_loss = VGGLoss(35) # Conv5_4
+    self.content_loss = VGGLoss(weights={35, 1}) # Conv5_4
 
   def to(self, device: str) -> Handler:
     self.content_loss.to(device=device)
