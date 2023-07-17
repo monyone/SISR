@@ -361,8 +361,8 @@ def _generate_gaussian_noise(image: torch.Tensor, sigma: float | int = 10.0, gra
 
     if type(gray_noise) == bool: gray_noise = 1 if gray_noise else 0
 
-    gray = torch.randn(image.shape[1:]) * sigma / 255
-    color = torch.randn(image.shape) * sigma / 255
+    gray = torch.randn(image.shape[1:], dtype=image.dtype, device=image.device) * sigma / 255
+    color = torch.randn(image.shape, dtype=image.dtype, device=image.device) * sigma / 255
     return color * (1 - gray_noise) + gray * gray_noise
 
 def _generate_poisson_noise(image: torch.Tensor, scale: float | int = 1.0, gray_noise: float | int | bool = 0) -> torch.Tensor:
@@ -545,7 +545,7 @@ def filter2d(image: torch.Tensor, kernel: torch.Tensor) -> torch.Tensor:
   return torch.nn.functional.conv2d(input=image.reshape(-1, 1, *image.shape[1:]), weight=kernel, padding=0).reshape(-1, H, W)
 
 def jpeg_operation(image: torch.Tensor, quality: int) -> torch.Tensor:
-  return torchvision.io.decode_jpeg(torchvision.io.encode_jpeg((image * 255).clamp_(0, 255).to(torch.uint8), quality=quality), torchvision.io.ImageReadMode.RGB) / 255
+  return (torchvision.io.decode_jpeg(torchvision.io.encode_jpeg((image * 255).clamp_(0, 255).to(torch.uint8).to(device='cpu'), quality=quality), torchvision.io.ImageReadMode.RGB) / 255).to(device=image.device)
 
 def usm_sharp(image: torch.Tensor, weight: float = 0.5, radius: int = 40, threashold: int = 10) -> torch.Tensor:
   if radius % 2 == 0: radius += 1
@@ -673,7 +673,7 @@ def degradation_real_esrgan(image: torch.Tensor, scale_factor: int, use_sharpnes
     lr (Tensor): Low-resolution image after degradation processing
   """
 
-  gaussian_kernel1, gaussian_kernel2, sinc_kernel = _prepare_kernel()
+  gaussian_kernel1, gaussian_kernel2, sinc_kernel = map(lambda k: k.to(device=image.device), _prepare_kernel())
   _, H, W = image.shape
 
   # When the sharpening operation is not suitable, the GT after sharpening is equal to GT
