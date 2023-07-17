@@ -26,7 +26,7 @@ def _degrade(image: torch.Tensor, scale_factor: int, interpolation: T.Interpolat
 class NonInterpolatedImageDataset(Dataset):
   def __init__(self, path: str or list[str], crop: int | None = None, scale: int = 2, interpolation: T.InterpolationMode = T.InterpolationMode.BICUBIC, distort: str | None = None, y_only: bool = False, dividable = False) -> None:
     super().__init__()
-    self.paths = sum(map(list, map(glob, path if type(path) is list else [path])), [])
+    self.paths: list[str] = sum(map(list, map(glob, path if type(path) is list else [path])), [])
     self.crop = crop
     self.scale = scale
     self.interpolation = interpolation
