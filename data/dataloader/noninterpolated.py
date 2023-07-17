@@ -11,6 +11,7 @@ from typing import Any
 
 from ..degradation.real_esrgan import degradation_real_esrgan
 from ..degradation.bsrgan import degradation_bsrgan
+from ..degradation.dncnn import degration_dncnn
 from ..degradation.jpeg import degradation_jpeg
 
 def _degrade(image: torch.Tensor, scale_factor: int, interpolation: T.InterpolationMode, distort: str | None = None):
@@ -18,13 +19,15 @@ def _degrade(image: torch.Tensor, scale_factor: int, interpolation: T.Interpolat
     return degradation_real_esrgan(image=image, scale_factor=scale_factor)
   elif distort == 'BSRGAN':
     return degradation_bsrgan(image=image, scale_factor=scale_factor)
+  elif distort == 'DnCNN':
+    return degration_dncnn(image=image, scale_factor=scale_factor, interpolation=interpolation)
   elif distort == 'JPEG':
     return degradation_jpeg(image=image, scale_factor=scale_factor, interpolation=interpolation)
   else:
     return F.resize(img=image, antialias=True, size=(tuple(map(lambda n: n // scale_factor, image.size()[1:3]))), interpolation=interpolation)
 
 class NonInterpolatedImageDataset(Dataset):
-  def __init__(self, path: str or list[str], crop: int | None = None, scale: int = 2, interpolation: T.InterpolationMode = T.InterpolationMode.BICUBIC, distort: str | None = None, y_only: bool = False, dividable = False) -> None:
+  def __init__(self, path: str or list[str], crop: int | None = None, scale: int = 2, interpolation: T.InterpolationMode = T.InterpolationMode.BICUBIC, distort: str | None = None, y_only: bool = False, upscale: bool = False, dividable: bool = False) -> None:
     super().__init__()
     self.paths: list[str] = sum(map(list, map(glob, path if type(path) is list else [path])), [])
     self.crop = crop

@@ -47,8 +47,8 @@ from models.RealESRGAN.handler import RealESRGANGeneratorHandler, RealESRGANDisc
 # PREFERENCE
 crop = None
 pairwise = False
-train_path = './data/dataset/DIV2K/DIV2K_train_HR_Patches_128_128/*'
-#train_path = ['./data/dataset/T91/Patches/*.png']
+#train_path = './data/dataset/DIV2K/DIV2K_train_HR_Patches_128_128/*'
+train_path = ['./data/dataset/T91/Patches/*.png']
 #pairwise=True
 #train_path='./data/dataset/DIV2K/DIV2K_train_HR_Patches_256_128_RealESRGANx4/*_HR.png'
 validate_path = './data/dataset/SET5/*'
