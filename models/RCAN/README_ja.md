@@ -6,4 +6,4 @@
 * Channql Attension として Squeeze & Excitation でいうところの Channle Squeeze and Spatial Excitation [^SqueezeAndExcitation] を採用
 * 既存の超解像タスクで SOTA を達成
 
-[^SqueezeAndExcitation]: [Concurrent Spatial and Channel Squeeze & Excitation in Fully Convolutional Networks)](https://arxiv.org/abs/1803.02579) の分類
+[^SqueezeAndExcitation]: [Concurrent Spatial and Channel Squeeze & Excitation in Fully Convolutional Networks](https://arxiv.org/abs/1803.02579) の分類
