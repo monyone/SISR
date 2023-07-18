@@ -22,8 +22,9 @@
 * [SRDenseNet (ICCV 2017)](./models/SRDenseNet/) [[Paper]](https://ieeexplore.ieee.org/document/8237776)
 * [MSLapSRN (TPAMI 2018)](./models/MSLapSRN/) [[Paper]](https://arxiv.org/abs/1710.01992)
 * [TSRN (ECCV 2018)](./models/TSRN/) [[Paper]](https://arxiv.org/abs/1808.00043)
-* [RDN (CVPR 2018)](./models/RDN/) [[Paper]](https://arxiv.org/abs/1802.08797)
 * [RRDBNet, ESRGAN (ECCV 2018)](./models/ESRGAN/) [[Paper]](https://arxiv.org/abs/1809.00219)
+* [RCAN (ECCV 2018)](./models/RCAN/) [[Paper]](https://arxiv.org/abs/1807.02758)
+* [RDN (CVPR 2018)](./models/RDN/) [[Paper]](https://arxiv.org/abs/1802.08797)
 * [Real-ESRNet, Real-ESRGAN (ICCV Workshop 2021)](./models/RealESRGAN/) [[Paper]](https://arxiv.org/abs/2107.10833)
 
 ## Usage

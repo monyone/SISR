@@ -34,6 +34,7 @@ from models.ESRGAN.model import RRDBNet
 from models.SRDenseNet.model import SRDenseNet
 from models.RDN.model import RDN
 from models.RealESRGAN.model import RealESRNet
+from models.RCAN.model import RCAN
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='PyTorch SISR (Single Image Super Resolution)')
@@ -65,6 +66,7 @@ if __name__ == '__main__':
     'EDSR': tuple([EDSR(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, distort=args.distort, y_only=args.y_only, upscale=(not args.test), dividable=args.test)]),
     'RDN': tuple([RDN(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, distort=args.distort, y_only=args.y_only, upscale=(not args.test), dividable=args.test)]),
     'RRDBNet': tuple([RRDBNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, distort=args.distort, y_only=args.y_only, upscale=(not args.test), dividable=args.test)]),
+    'RCAN': tuple([RCAN(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, distort=args.distort, y_only=args.y_only, upscale=(not args.test), dividable=args.test)]),
     'Real-ESRNet': tuple([RealESRNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, distort=args.distort, y_only=args.y_only, upscale=(not args.test), dividable=args.test)]),
   }
 
