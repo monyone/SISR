@@ -35,7 +35,7 @@ class SRGANGeneratorHandler(Handler):
     self.model = model
     self.handler = handler
     self.mse_loss = nn.MSELoss()
-    self.content_loss = VGGLoss(weights={35, 1}) # Conv5_4
+    self.content_loss = VGGLoss(weights={35: 1}) # Conv5_4
 
   def to(self, device: str) -> Handler:
     self.content_loss.to(device=device)

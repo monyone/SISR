@@ -2,6 +2,7 @@
 
 import argparse
 from pathlib import Path
+import time
 
 import torch
 from torch import cuda
@@ -35,6 +36,7 @@ from models.SRDenseNet.model import SRDenseNet
 from models.RDN.model import RDN
 from models.RealESRGAN.model import RealESRNet
 from models.RCAN.model import RCAN
+from models.SwiftSRGAN.model import SwiftSRResNet
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='PyTorch SISR (Single Image Super Resolution)')
@@ -45,6 +47,7 @@ if __name__ == '__main__':
   parser.add_argument('--state', type=Path, required=True, help="Trained state Path")
   parser.add_argument('--y_only', action='store_true', help="inference Y color only")
   parser.add_argument('--test', action='store_true', help="inference for testing")
+  parser.add_argument('--time', action='store_true', help="show inference time")
   parser.add_argument('--distort', type=str, help="image distortion method using testing")
 
   args = parser.parse_args()
@@ -67,6 +70,7 @@ if __name__ == '__main__':
     'RDN': tuple([RDN(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, distort=args.distort, y_only=args.y_only, upscale=(not args.test), dividable=args.test)]),
     'RRDBNet': tuple([RRDBNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, distort=args.distort, y_only=args.y_only, upscale=(not args.test), dividable=args.test)]),
     'RCAN': tuple([RCAN(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, distort=args.distort, y_only=args.y_only, upscale=(not args.test), dividable=args.test)]),
+    'Swift-SRResNet': tuple([SwiftSRResNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, distort=args.distort, y_only=args.y_only, upscale=(not args.test), dividable=args.test)]),
     'Real-ESRNet': tuple([RealESRNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, distort=args.distort, y_only=args.y_only, upscale=(not args.test), dividable=args.test)]),
   }
 
@@ -87,6 +91,6 @@ if __name__ == '__main__':
       utils.save_image(upscaled, str(f'./{args.image.stem}_sr{args.image.suffix}'), nrow=1)
       if args.test:
         from math import log10
-        print(10 * log10(1 / torch.nn.MSELoss()(upscaled, highres.to(device)).data))
+        print(f'PSNR: {10 * log10(1 / torch.nn.MSELoss()(upscaled, highres).item())}')
         utils.save_image(lowres, str(f'./{args.image.stem}_lr{args.image.suffix}'), nrow=1)
         utils.save_image(torch.abs(upscaled - highres.to(device)), str(f'./{args.image.stem}_sr_ud{args.image.suffix}'), nrow=1)

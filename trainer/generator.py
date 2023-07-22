@@ -64,17 +64,21 @@ class GeneratorTrainer:
 
   def test(self, epoch: int) -> None:
     self.model.eval()
-    test_loss, test_psnr = 0, 0
+    test_loss, test_psnr, test_inference_time = 0, 0, 0
     with torch.no_grad():
       for batch in self.test_loader:
         highres, lowres = batch
         highres = tuple(map(lambda n: n.to(self.device), highres)) if type(highres) is list else highres.to(self.device)
         lowres = tuple(map(lambda n: n.to(self.device), lowres)) if type(lowres) is list else lowres.to(self.device)
 
+        begin = time.monotonic_ns()
         loss, psnr = self.handler.statistics(lowres, highres)
+        end = time.monotonic_ns()
+
         test_loss += loss
         test_psnr += psnr
-    print("[epoch:{}, validate] Loss: {:.4f}, PSNR: {:.4f} dB".format(epoch, test_loss / len(self.test_loader), test_psnr / len(self.test_loader)))
+        test_inference_time += (end - begin) / 1000000
+    print("[epoch:{}, validate] Loss: {:.4f}, PSNR: {:.4f} dB, Time: {:.4f} ms".format(epoch, test_loss / len(self.test_loader), test_psnr / len(self.test_loader), test_inference_time / len(self.test_loader)))
 
   def run(self, epochs: int, save_dir: Path = Path('./'), save_prefix: str = 'result') -> None:
     os.makedirs(save_dir, exist_ok=True)

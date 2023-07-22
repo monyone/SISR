@@ -43,6 +43,7 @@ from models.RDN.model import RDN
 from models.RealESRGAN.model import RealESRNet, RealESRGAN
 from models.RealESRGAN.handler import RealESRGANGeneratorHandler, RealESRGANDiscriminatorHandler
 from models.RCAN.model import RCAN
+from models.SwiftSRGAN.model import SwiftSRResNet, SwiftSRGAN
 
 # PREFERENCE
 crop = None
@@ -86,6 +87,7 @@ if __name__ == '__main__':
     'RDN': tuple([RDN(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, PairwiseDataSet(path=train_path, y_only=args.y_only) if pairwise else NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'RRDBNet': tuple([RRDBNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, PairwiseDataSet(path=train_path, y_only=args.y_only) if pairwise else NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'RCAN': tuple([RCAN(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, PairwiseDataSet(path=train_path, y_only=args.y_only) if pairwise else NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'Swift-SRResNet': tuple([SwiftSRResNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, PairwiseDataSet(path=train_path, y_only=args.y_only) if pairwise else NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'Real-ESRNet': tuple([RealESRNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, PairwiseDataSet(path=train_path, y_only=args.y_only) if pairwise else NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
   }
 
@@ -93,6 +95,7 @@ if __name__ == '__main__':
     'EnhanceNet': tuple([EnhanceNetDiscriminator((1 if args.y_only else 3), size=tuple([args.discriminator_patch] * 2)), EnhanceNetGeneratorHandler, EnhanceNetDiscriminatorHandler, 0.0001]),
     'SRGAN': tuple([SRGAN((1 if args.y_only else 3), size=(tuple([args.discriminator_patch] * 2))), SRGANGeneratorHandler, SRGANDiscriminatorHandler, 0.0001]),
     'ESRGAN': tuple([ESRGAN((1 if args.y_only else 3), size=(tuple([args.discriminator_patch] * 2))), ESRGANGeneratorHandler, ESRGANDiscriminatorHandler, 0.0001]),
+    'Swift-SRGAN': tuple([SwiftSRGAN((1 if args.y_only else 3)), SRGANGeneratorHandler, SRGANDiscriminatorHandler, 0.0001]),
     'Real-ESRGAN': tuple([RealESRGAN((1 if args.y_only else 3)), RealESRGANGeneratorHandler, RealESRGANDiscriminatorHandler, 0.0001]),
   }
 
