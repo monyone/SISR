@@ -25,6 +25,7 @@
 * [RDN (CVPR 2018)](./models/RDN/) [[Paper]](https://arxiv.org/abs/1802.08797)
 * [RRDBNet, ESRGAN (ECCV 2018)](./models/ESRGAN/) [[Paper]](https://arxiv.org/abs/1809.00219)
 * [RCAN (ECCV 2018)](./models/RCAN/) [[Paper]](https://arxiv.org/abs/1807.02758)
+* [Swift-SRGAN (2021)](./models/SwiftSRGAN/) [[Paper]](https://arxiv.org/abs/2111.14320)
 * [Real-ESRNet, Real-ESRGAN (ICCV Workshop 2021)](./models/RealESRGAN/) [[Paper]](https://arxiv.org/abs/2107.10833)
 
 ## Usage
