@@ -10,7 +10,7 @@ Site:
   "Photo-Realistic Single Image Super-Resolution Using a Generative Adversarial Network (2016)" (https://arxiv.org/abs/1609.04802)
 """
 
-class SeparatableConv2d(nn.Module):
+class SeparableConv2d(nn.Module):
   def __init__(self, in_channels: int, out_channels: int, kernel_size: int, padding: int, stride: int, bias: bool):
     super().__init__()
     self.layers = nn.Sequential(
@@ -27,10 +27,10 @@ class ResidualBlock(nn.Module):
   def __init__(self, f: int = 3, n: int = 64, use_batchnorm: bool = True) -> None:
     super().__init__()
     self.block = nn.Sequential(
-      SeparatableConv2d(in_channels=n, out_channels=n, kernel_size=f, stride=1, padding=f//2, bias=(not use_batchnorm)),
+      SeparableConv2d(in_channels=n, out_channels=n, kernel_size=f, stride=1, padding=f//2, bias=(not use_batchnorm)),
       nn.BatchNorm2d(n) if use_batchnorm else nn.Identity(),
       nn.PReLU(n),
-      SeparatableConv2d(in_channels=n, out_channels=n, kernel_size=f, stride=1, padding=f//2, bias=(not use_batchnorm)),
+      SeparableConv2d(in_channels=n, out_channels=n, kernel_size=f, stride=1, padding=f//2, bias=(not use_batchnorm)),
       nn.BatchNorm2d(n) if use_batchnorm else nn.Identity(),
     )
 
@@ -44,7 +44,7 @@ class UpscaleBlock(nn.Module):
   def __init__(self, scale: int, f: int = 3, n: int = 64) -> None:
     super().__init__()
     self.block = nn.Sequential(
-      SeparatableConv2d(n, (scale ** 2) * n, kernel_size=f,  stride=1, padding=f//2, bias=True),
+      SeparableConv2d(n, (scale ** 2) * n, kernel_size=f,  stride=1, padding=f//2, bias=True),
       nn.PixelShuffle(scale),
       nn.PReLU(n)
     )
@@ -70,7 +70,7 @@ class SwiftSRResNet(nn.Module):
     super().__init__()
     # Input Layer
     self.input = nn.Sequential(
-      SeparatableConv2d(in_channels=c, out_channels=n, kernel_size=f1, stride=1, padding=f1//2, bias=False),
+      SeparableConv2d(in_channels=c, out_channels=n, kernel_size=f1, stride=1, padding=f1//2, bias=False),
       nn.PReLU(n)
     )
     # Residubal Blocks
@@ -78,7 +78,7 @@ class SwiftSRResNet(nn.Module):
       *[ResidualBlock(f=f2, n=n) for _ in range(l)]
     )
     self.skip = nn.Sequential(
-      SeparatableConv2d(in_channels=n, out_channels=n, kernel_size=f2, stride=1, padding=f2//2, bias=False),
+      SeparableConv2d(in_channels=n, out_channels=n, kernel_size=f2, stride=1, padding=f2//2, bias=False),
       nn.BatchNorm2d(n),
     )
     # Upscale Blocks
@@ -86,7 +86,7 @@ class SwiftSRResNet(nn.Module):
       *[UpscaleBlock(scale=2, f=f2, n=n) for _ in range(int(log(scale, 2)))]
     )
     # Output Layer
-    self.output = SeparatableConv2d(in_channels=n, out_channels=c, kernel_size=f1, stride=1, padding=f1//2, bias=False)
+    self.output = SeparableConv2d(in_channels=n, out_channels=c, kernel_size=f1, stride=1, padding=f1//2, bias=False)
 
     for m in self.modules():
       if isinstance(m, nn.Conv2d):
@@ -104,7 +104,7 @@ class SwiftSRResNet(nn.Module):
     x = self.skip(x) + skip
     x = self.upscale(x)
     x = self.output(x)
-    return x
+    return (torch.tanh(x) + 1) / 2
 
 class SwiftSRGAN(nn.Module):
   def __init__(self, c: int = 3) -> None:
@@ -119,13 +119,13 @@ class SwiftSRGAN(nn.Module):
     super().__init__()
     # layers
     self.layers = nn.Sequential(
-      SeparatableConv2d(in_channels=c, out_channels=64, kernel_size=3, stride=1, padding=3//2, bias=True),
+      SeparableConv2d(in_channels=c, out_channels=64, kernel_size=3, stride=1, padding=3//2, bias=True),
       nn.LeakyReLU(negative_slope=0.2, inplace=True),
       *[nn.Sequential(
-        SeparatableConv2d(in_channels=64 * (2 ** idx), out_channels=64 * (2 ** idx), kernel_size=3, stride=2, padding=3//2, bias=False),
+        SeparableConv2d(in_channels=64 * (2 ** idx), out_channels=64 * (2 ** idx), kernel_size=3, stride=2, padding=3//2, bias=False),
         nn.BatchNorm2d(num_features=64 * (2 ** idx)),
         nn.LeakyReLU(negative_slope=0.2, inplace=True),
-        SeparatableConv2d(in_channels=64 * (2 ** idx), out_channels=128 * (2 ** idx), kernel_size=3, stride=1, padding=3//2, bias=False),
+        SeparableConv2d(in_channels=64 * (2 ** idx), out_channels=128 * (2 ** idx), kernel_size=3, stride=1, padding=3//2, bias=False),
         nn.BatchNorm2d(num_features=128 * (2 ** idx)),
         nn.LeakyReLU(negative_slope=0.2, inplace=True),
       ) for idx in range(3)],
