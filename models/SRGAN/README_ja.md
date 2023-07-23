@@ -10,10 +10,10 @@
 
 ### 訓練画像のサイズについて
 
-* x4 の場合は、論文と同じように 96x96 か、それ以上にしないと、出力が崩れる
+* 論文と同じように、訓練用のパッチサイズは 96x96 か、それ以上にしないと、出力が崩れる
   * Perceptual Loss が、学習画像のサイズに依存しているため
-  * 32x32 でやった場合、元画像の 8x8 px から perceptual Loss を補おうとしてしまい、局所的すぎてしまう
-  * 訓練用の低解像度画像が 16x16 以上 (低解像度 32x32 でもいい結果になった) である必要あり
+  * 32x32 でやった場合、元画像の 8x8 px の領域から perceptual Loss を補おうとしてしまい、局所的すぎてしまった
+  * 訓練用の低解像度画像が 24x24 以上 (低解像度 32x32 (128x128) でもいい結果になった) である必要あり
 
 ### Perceptual Loss について
 
@@ -25,4 +25,15 @@
 * この論文では Adversarial Loss に 0.001 の係数を掛けている (Perceptual Loss は 1)
   * (こんな少なくていいのか疑問がある...ここらへんよくわからん...)
 
+### 高速化について
 
+* [Fast-SRGAN](https://github.com/HasnainRaz/Fast-SRGAN) が有名らしい
+  * 以下 2 つが特徴的
+    * Convolution を Depthwise Separatable Convolution へ
+      * [Swift-SRGAN](../SwiftSRGAN/) とか、後続手法の高速化でもデファクト (置き換えるだけなので)
+    * PixelShuffle を Bilinear Upsample + Convolution へ
+      * 古典的 Upsample を使うのは [EnhanceNet](../EnhanceNet/) で見た手法だが、[ESRGAN](../ESRGAN/) でも使われてる (市民権があるらしい)
+      * SwinIR では Artifact が出にくい Real-World SR と書かれていた
+  * 特徴マップの数などは [Towards Real-Time Image Enhancement GANs](https://link.springer.com/chapter/10.1007/978-3-030-29888-3_15) から取っている
+    * 特徴マップの数: Fast -> 32, Very-Fast -> 8
+    * Residual Block の数: Fast -> 12, Very-Fast -> 16
