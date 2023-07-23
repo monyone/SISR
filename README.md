@@ -27,6 +27,7 @@
 * [RCAN (ECCV 2018)](./models/RCAN/) [[Paper]](https://arxiv.org/abs/1807.02758)
 * [Swift-SRGAN (2021)](./models/SwiftSRGAN/) [[Paper]](https://arxiv.org/abs/2111.14320)
 * [Real-ESRNet, Real-ESRGAN (ICCV Workshop 2021)](./models/RealESRGAN/) [[Paper]](https://arxiv.org/abs/2107.10833)
+* [HPUN (AAAI 2023)](./models/HPUN/) [[Paper]](https://arxiv.org/abs/2203.08921)
 
 ## Usage
 
