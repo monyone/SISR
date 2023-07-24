@@ -45,6 +45,7 @@ from models.RealESRGAN.handler import RealESRGANGeneratorHandler, RealESRGANDisc
 from models.RCAN.model import RCAN
 from models.SwiftSRGAN.model import SwiftSRResNet, SwiftSRGAN
 from models.HPUN.model import HPUN
+from models.SAN.model import SAN
 
 # PREFERENCE
 crop = None
@@ -88,6 +89,7 @@ if __name__ == '__main__':
     'RDN': tuple([RDN(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, PairwiseDataSet(path=train_path, y_only=args.y_only) if pairwise else NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'RRDBNet': tuple([RRDBNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, PairwiseDataSet(path=train_path, y_only=args.y_only) if pairwise else NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'RCAN': tuple([RCAN(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, PairwiseDataSet(path=train_path, y_only=args.y_only) if pairwise else NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'SAN': tuple([SAN(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, PairwiseDataSet(path=train_path, y_only=args.y_only) if pairwise else NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'Swift-SRResNet': tuple([SwiftSRResNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, PairwiseDataSet(path=train_path, y_only=args.y_only) if pairwise else NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'Real-ESRNet': tuple([RealESRNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, PairwiseDataSet(path=train_path, y_only=args.y_only) if pairwise else NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'HPUN': tuple([HPUN(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, PairwiseDataSet(path=train_path, y_only=args.y_only) if pairwise else NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
