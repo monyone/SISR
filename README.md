@@ -25,7 +25,7 @@
 * [RDN (CVPR 2018)](./models/RDN/) [[Paper]](https://arxiv.org/abs/1802.08797)
 * [RRDBNet, ESRGAN (ECCV 2018)](./models/ESRGAN/) [[Paper]](https://arxiv.org/abs/1809.00219)
 * [RCAN (ECCV 2018)](./models/RCAN/) [[Paper]](https://arxiv.org/abs/1807.02758)
-* [SAN (CVPR 2019)](./models/SAN/) [[Paper]] (https://openaccess.thecvf.com/content_CVPR_2019/html/Dai_Second-Order_Attention_Network_for_Single_Image_Super-Resolution_CVPR_2019_paper.html)
+* [SAN (CVPR 2019)](./models/SAN/) [[Paper]](https://openaccess.thecvf.com/content_CVPR_2019/html/Dai_Second-Order_Attention_Network_for_Single_Image_Super-Resolution_CVPR_2019_paper.html)
 * [Swift-SRGAN (2021)](./models/SwiftSRGAN/) [[Paper]](https://arxiv.org/abs/2111.14320)
 * [Real-ESRNet, Real-ESRGAN (ICCV Workshop 2021)](./models/RealESRGAN/) [[Paper]](https://arxiv.org/abs/2107.10833)
 * [HPUN (AAAI 2023)](./models/HPUN/) [[Paper]](https://arxiv.org/abs/2203.08921)
