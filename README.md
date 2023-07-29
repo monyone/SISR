@@ -40,20 +40,20 @@
 ./train.py --generator [ONE_OF_ABOVE_MODELS] --epoch ${epochs} --scale ${upscale_factor}
 ```
 
-### GAN
+#### GAN
 
 ```bash
 ./train.py --generator [ONE_OF_ABOVE_MODELS] --discriminator [ONE_OF_ABOVE_DISCRIMINATIOR] --epoch ${epochs} --scale ${upscale_factor} --distort [Real-ESRGAN|BSRGAN|JPEG]
 ```
 
-## Super Resolution
-
-```bash
-./main.py --model [ONE_OF_ABOVE_MODELS] --image ${image_path} --state ${state_path} --scale ${upscale_factor}
-```
-
-## Testing
+### Testing
 
 ```bash
 ./main.py --model [ONE_OF_ABOVE_MODELS] --image ${image_path} --state ${state_path} --scale ${upscale_factor} --test --distort [Real-ESRGAN|BSRGAN|JPEG]
+```
+
+### Super Resolution
+
+```bash
+./main.py --model [ONE_OF_ABOVE_MODELS] --image ${image_path} --state ${state_path} --scale ${upscale_factor}
 ```
