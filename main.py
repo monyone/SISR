@@ -39,6 +39,7 @@ from models.RCAN.model import RCAN
 from models.SwiftSRGAN.model import SwiftSRResNet
 from models.HPUN.model import HPUN
 from models.SAN.model import SAN
+from models.SwinIR.model import SwinIR
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='PyTorch SISR (Single Image Super Resolution)')
@@ -75,6 +76,7 @@ if __name__ == '__main__':
     'Swift-SRResNet': tuple([SwiftSRResNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, distort=args.distort, y_only=args.y_only, upscale=(not args.test), dividable=args.test)]),
     'Real-ESRNet': tuple([RealESRNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, distort=args.distort, y_only=args.y_only, upscale=(not args.test), dividable=args.test)]),
     'HPUN': tuple([HPUN(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, distort=args.distort, y_only=args.y_only, upscale=(not args.test), dividable=args.test)]),
+    'SwinIR': tuple([SwinIR(c=(1 if args.y_only else 3), scale=args.scale),  DefaultMAEHandler, NonInterpolatedImageDataset(path=str(args.image), crop=args.crop, scale=args.scale, distort=args.distort, y_only=args.y_only, upscale=(not args.test), dividable=args.test)]),
   }
 
   device: str = 'cuda' if cuda.is_available() else 'cpu'

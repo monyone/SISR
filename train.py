@@ -46,6 +46,7 @@ from models.RCAN.model import RCAN
 from models.SwiftSRGAN.model import SwiftSRResNet, SwiftSRGAN
 from models.HPUN.model import HPUN
 from models.SAN.model import SAN
+from models.SwinIR.model import SwinIR
 
 # PREFERENCE
 crop = None
@@ -59,14 +60,14 @@ validate_path = './data/dataset/SET5/*'
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='PyTorch SISR (Single Image Super Resolution)')
   parser.add_argument('--epochs', type=int, default=10, help="Number of Epochs")
+  parser.add_argument('--scale', type=int, default=2, help="Upscaling scale factor")
   parser.add_argument('--generator', type=str, required=True, help="SISR generator model")
   parser.add_argument('--generator_state', type=str, help="SISR generator state")
   parser.add_argument('--discriminator', type=str, help="SISR discriminator model")
   parser.add_argument('--discriminator_patch', type=int, default=128, help="SISR discriminator patch size")
-  parser.add_argument('--scale', type=int, default=2, help="Upscaling scale factor")
+  parser.add_argument('--distort', type=str, help="image distortion method")
   parser.add_argument('--batch', type=int, default=1, help="Batch size")
   parser.add_argument('--amp', action='store_true', help="Train with amp")
-  parser.add_argument('--distort', type=str, help="image distortion method")
   parser.add_argument('--y_only', action='store_true', help="Train y color only")
 
   args = parser.parse_args()
@@ -93,6 +94,7 @@ if __name__ == '__main__':
     'Swift-SRResNet': tuple([SwiftSRResNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMSEHandler, PairwiseDataSet(path=train_path, y_only=args.y_only) if pairwise else NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'Real-ESRNet': tuple([RealESRNet(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, PairwiseDataSet(path=train_path, y_only=args.y_only) if pairwise else NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
     'HPUN': tuple([HPUN(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, PairwiseDataSet(path=train_path, y_only=args.y_only) if pairwise else NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
+    'SwinIR': tuple([SwinIR(c=(1 if args.y_only else 3), scale=args.scale), DefaultMAEHandler, PairwiseDataSet(path=train_path, y_only=args.y_only) if pairwise else NonInterpolatedImageDataset(path=train_path, crop=crop, scale=args.scale, distort=args.distort, y_only=args.y_only), NonInterpolatedImageDataset(path=validate_path, scale=args.scale, y_only=args.y_only), 0.0001]),
   }
 
   discriminator_models = {
